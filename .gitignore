@@ -1,0 +1,8 @@
+*.class
+*.db
+*.jar
+
+bin/*
+!bin/.gitkeep
+lib/*
+!lib/.gitkeep
