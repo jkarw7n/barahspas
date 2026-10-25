@@ -3,6 +3,6 @@
 *.jar
 
 bin/*
-!bin/.gitkeep
+!bin/img
 lib/*
 !lib/.gitkeep

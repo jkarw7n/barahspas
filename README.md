@@ -5,7 +5,7 @@ A barangay health station patient and appointment system
 
 ## Contributors
 - Clark Kent C. Cabigao
-- Charlene Isabel C. Gallardo
+- [Charlene Isabel C. Gallardo](https://github.com/irischivr)
 - King James E. Ignacio
 - Jan Michael M. Magat
 - Gillian Kyle M. Pingol
