@@ -35,6 +35,7 @@ abstract class Person implements Identifiable {
     + void setMobileNumber(String mobileNumber)
     + void setEmailAddress(String emailAddress)
     .. Other Methods ..
+    + String getFullName()
     - String capitalizeName(String name)
 }
 

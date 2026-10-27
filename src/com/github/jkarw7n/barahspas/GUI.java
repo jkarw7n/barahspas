@@ -1,18 +1,25 @@
 package com.github.jkarw7n.barahspas;
 
 import com.formdev.flatlaf.*;
-import com.formdev.flatlaf.extras.*;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import java.awt.*;
 import java.awt.event.*;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
-class GUI {
+class GUI implements ActionListener {
     JFrame frame;
     JPanel mainPanel;
+    DefaultTableModel patientsTableModel, appointmentsTableModel, medicalStaffTableModel;
 
     public GUI() throws SQLException, UnsupportedLookAndFeelException {
         UIManager.setLookAndFeel(new FlatDarkLaf());
@@ -47,29 +54,27 @@ class GUI {
         searchPatientsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA, InputEvent.CTRL_DOWN_MASK));
         registerPatientItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK));
 
-        patientsMenu.add(searchPatientsItem);
-        patientsMenu.add(registerPatientItem);
-        patientsMenu.add(updatePatientItem);
-        patientsMenu.add(deletePatientItem);
+        for (JMenuItem menuItem : new JMenuItem[] {searchPatientsItem, registerPatientItem, updatePatientItem, deletePatientItem}) {
+            patientsMenu.add(menuItem);
+            menuItem.addActionListener(this);
+        }
 
         searchAppointmentsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_PERIOD, InputEvent.CTRL_DOWN_MASK));
         scheduleAppointmentItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_DOWN_MASK));
         completeAppointmentItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK));
 
-        appointmentsMenu.add(searchAppointmentsItem);
-        appointmentsMenu.add(scheduleAppointmentItem);
-        appointmentsMenu.add(completeAppointmentItem);
-        appointmentsMenu.add(updateAppointmentItem);
-        appointmentsMenu.add(cancelAppointmentItem);
-        appointmentsMenu.add(deleteAppointmentItem);
+        for (JMenuItem menuItem : new JMenuItem[] {searchAppointmentsItem, scheduleAppointmentItem, completeAppointmentItem, updateAppointmentItem, cancelAppointmentItem, deleteAppointmentItem}) {
+            appointmentsMenu.add(menuItem);
+            menuItem.addActionListener(this);
+        }
 
         searchMedicalStaffItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SLASH, InputEvent.CTRL_DOWN_MASK));
         registerMedicalStaffItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M, InputEvent.CTRL_DOWN_MASK));
 
-        medicalStaffMenu.add(searchMedicalStaffItem);
-        medicalStaffMenu.add(registerMedicalStaffItem);
-        medicalStaffMenu.add(updateMedicalStaffItem);
-        medicalStaffMenu.add(deleteMedicalStaffItem);
+        for (JMenuItem menuItem : new JMenuItem[] {searchMedicalStaffItem, registerMedicalStaffItem, updateMedicalStaffItem, deleteMedicalStaffItem}) {
+            medicalStaffMenu.add(menuItem);
+            menuItem.addActionListener(this);
+        }
 
         aboutMenu.setMnemonic('b');
         patientsMenu.setMnemonic('p');
@@ -84,12 +89,9 @@ class GUI {
                     cardLayout.show(mainPanel, ((JMenu) e.getSource()).getText());
                 }
             });
-        }
 
-        menuBar.add(aboutMenu);
-        menuBar.add(patientsMenu);
-        menuBar.add(appointmentsMenu);
-        menuBar.add(medicalStaffMenu);
+            menuBar.add(menu);
+        }
 
         frame.setJMenuBar(menuBar);
 
@@ -101,7 +103,7 @@ class GUI {
         frame.add(mainPanel);
     }
 
-    private void addAboutPanel() {
+    private void addAboutPanel() throws SQLException {
         JPanel aboutPanel = new JPanel(new BorderLayout());
 
         aboutPanel.setBorder(BorderFactory.createEmptyBorder(50, 50, 50, 50));
@@ -115,16 +117,14 @@ class GUI {
             versionLabel = new JLabel("Version 1.0"),
             descriptionLabel = new JLabel("A barangay health station patient and appointment system");
         
-        logoLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+        for (JLabel label : new JLabel[] {logoLabel, barahspasLabel, versionLabel, descriptionLabel}) {
+            label.setAlignmentX(JLabel.CENTER_ALIGNMENT);
+        }
 
         barahspasLabel.putClientProperty(FlatClientProperties.STYLE_CLASS, "h1");
-        barahspasLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
 
         versionLabel.putClientProperty(FlatClientProperties.STYLE_CLASS, "h2");
         versionLabel.setForeground(Color.LIGHT_GRAY);
-        versionLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
-
-        descriptionLabel.setAlignmentX(JLabel.CENTER_ALIGNMENT);
 
         boxPanel.add(Box.createVerticalGlue());
         boxPanel.add(logoLabel);
@@ -170,10 +170,7 @@ class GUI {
         JLabel patientIdLabel = new JLabel("Patient ID");
         JSpinner patientIdSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 1000, 1));
 
-        patientIdLabel.setAlignmentX(JLabel.LEFT_ALIGNMENT);
-
         patientIdSpinner.setMaximumSize(patientIdSpinner.getPreferredSize());
-        patientIdSpinner.setAlignmentX(JSpinner.LEFT_ALIGNMENT);
 
         patientIdPanel.add(patientIdLabel);
         patientIdPanel.add(patientIdSpinner);
@@ -181,11 +178,8 @@ class GUI {
         JLabel firstNameLabel = new JLabel("First Name");
         JTextField firstNameField = new JTextField(15);
 
-        firstNameLabel.setAlignmentX(JLabel.LEFT_ALIGNMENT);
-
         firstNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter first name here");
         firstNameField.setMaximumSize(firstNameField.getPreferredSize());
-        firstNameField.setAlignmentX(JTextField.LEFT_ALIGNMENT);
 
         firstNamePanel.add(firstNameLabel);
         firstNamePanel.add(firstNameField);
@@ -193,11 +187,8 @@ class GUI {
         JLabel lastNameLabel = new JLabel("Last Name");
         JTextField lastNameField = new JTextField(10);
 
-        lastNameLabel.setAlignmentX(JLabel.LEFT_ALIGNMENT);
-
         lastNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter last name here");
         lastNameField.setMaximumSize(lastNameField.getPreferredSize());
-        lastNameField.setAlignmentX(JTextField.LEFT_ALIGNMENT);
 
         lastNamePanel.add(lastNameLabel);
         lastNamePanel.add(lastNameField);
@@ -205,18 +196,25 @@ class GUI {
         JLabel mobileNumberLabel = new JLabel("Mobile Number");
         JTextField mobileNumberField = new JTextField(10);
 
-        mobileNumberLabel.setAlignmentX(JLabel.LEFT_ALIGNMENT);
-
         mobileNumberField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter number here");
         mobileNumberField.setMaximumSize(mobileNumberField.getPreferredSize());
-        mobileNumberField.setAlignmentX(JTextField.LEFT_ALIGNMENT);
 
         mobileNumberPanel.add(mobileNumberLabel);
         mobileNumberPanel.add(mobileNumberField);
 
         JButton quickSearchButton = new JButton("Quick Search");
 
+        quickSearchButton.setMnemonic('q');
+
         quickSearchPanel.add(quickSearchButton);
+
+        for (JComponent component : new JComponent[] {patientIdLabel, patientIdSpinner, firstNameLabel, firstNameField, lastNameLabel, lastNameField, mobileNumberLabel, mobileNumberField}) {
+            component.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+        }
+
+        for (JButton button : new JButton[] {searchButton, registerButton, updateButton, deleteButton, quickSearchButton}) {
+            button.addActionListener(this);
+        }
 
         toolbar.add(searchButton);
         toolbar.add(registerButton);
@@ -229,15 +227,53 @@ class GUI {
         toolbar.add(mobileNumberPanel);
         toolbar.add(quickSearchPanel);
 
-        JTable table = new JTable(new Object[][] {}, new String[] {"Patient ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Sex", "Medical Records"});
+        patientsTableModel = new DefaultTableModel(new Object[][] {}, new String[] {"Patient ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Age", "Patient Sex", "Medical Records"});
 
-        // double click a row to edit it
+        JTable table = new JTable(patientsTableModel);
 
-        table.setDefaultEditor(Object.class, null);
+        for (Patient patient : new QueryManager().getAllPatients()) {
+            patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(DateTimeFormatter.ofPattern("MMMM d, yyyy")), patient.getAge(), patient.getSex(), "Open in dialog"});
+        }
+
+        JTextField editor = new JTextField();
+
+        editor.setEditable(false);
+
+        table.setDefaultEditor(Object.class, new DefaultCellEditor(editor));
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int row = table.rowAtPoint(e.getPoint()),
+                    column = table.columnAtPoint(e.getPoint());
+
+                if (column == 10) {
+                    try {
+                        JPanel medicalRecordPanel = new JPanel();
+                        SortedMap<LocalDate, String> medicalRecords = new QueryManager().getPatient((int) table.getValueAt(row, 0)).getMedicalRecords();
+
+                        if (medicalRecords == null)
+                            medicalRecordPanel.add(new JLabel("No existing medical records were found for this patient."));
+                        else {
+                            medicalRecordPanel.setLayout(new GridLayout(0, 2, 5, 5));
+
+                            medicalRecords.forEach((key, value) -> {
+                                medicalRecordPanel.add(new JLabel(key.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"))));
+                                medicalRecordPanel.add(new JLabel(value));
+                            });
+                        }
+
+                        JOptionPane.showMessageDialog(frame, medicalRecordPanel, "Medical Records", JOptionPane.PLAIN_MESSAGE);
+                    } catch (SQLException sqle) {
+                        Dialog.showError(sqle.getMessage());
+                    }
+                }
+            }
+        });
 
         JScrollPane scrollPane = new JScrollPane(table);
 
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
         patientsPanel.add(toolbar, BorderLayout.NORTH);
         patientsPanel.add(scrollPane, BorderLayout.CENTER);
@@ -251,5 +287,66 @@ class GUI {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        String text = null;
+
+        if (e.getSource() instanceof JMenuItem menuItem)
+            text = menuItem.getText();
+        else if (e.getSource() instanceof JButton button)
+            text = button.getToolTipText();
+
+        if (text.equals("Search Patients")) {
+            String[] components = {"Patient ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
+            List<Object> list = new Dialog(false, components).showDialog(text);
+            
+            patientsTableModel.setRowCount(0);
+
+            if (list == null) {
+                try {
+                    new QueryManager().getAllPatients().forEach((patient) -> {
+                        patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(DateTimeFormatter.ofPattern("MMMM d, yyyy")), patient.getAge(), patient.getSex(), "Open in dialog"});
+                    });
+                } catch (SQLException sqle) {
+                    Dialog.showError(sqle.getMessage());
+                }
+            } else {
+                try {
+                    Map<String, Object> map = new HashMap<>();
+
+                    for (int i = 0; i < components.length; i++) {
+                        if (list.get(i) != null) {
+                            if (list.get(i) instanceof LocalDate date)
+                                map.put(components[i].replaceAll(" ", ""), date.toString());
+                            else
+                                map.put(components[i].replaceAll(" ", ""), list.get(i));
+                        }
+                    }
+
+                    new QueryManager().filterPatients(map).forEach((patient) -> {
+                        patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getAge(), patient.getSex(), "Open in dialog"});
+                    });
+                } catch (SQLException sqle) {
+                    Dialog.showError(sqle.getMessage());
+                }
+            }
+        } else if (text.equals("Register Patient")) {
+            String[] components = {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
+            List<Object> list = new Dialog(true, components).showDialog(text);
+
+            if (list != null && list.get(0) != null) {
+                try {
+                    Patient patient = new QueryManager().registerPatient(new Patient((String) list.get(0), (String) list.get(1), (String) list.get(2), (String) list.get(3), (String) list.get(4), (String) list.get(5), (LocalDate) list.get(6), (String) list.get(7)));
+
+                    patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(DateTimeFormatter.ofPattern("MMMM d, yyyy")), patient.getAge(), patient.getSex(), "Open in dialog"});
+                } catch (SQLException sqle) {
+                    Dialog.showError(sqle.getMessage());
+                }
+            }
+        } else if (text.equals("Update Patient")) {
+            
+        }
     }
 }

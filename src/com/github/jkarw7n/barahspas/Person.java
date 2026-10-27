@@ -108,6 +108,10 @@ abstract class Person implements Identifiable {
         this.emailAddress = emailAddress.replaceAll("\\s+", " ").strip();
     }
 
+    public String getFullName() {
+        return firstName + (middleName != null ? " " + middleName : "") + " " + lastName + (nameSuffix != null ? " " + nameSuffix : "");
+    }
+
     private String capitalizeName(String name) {
         String[] split = name.replaceAll("\\s+", " ").strip().split(" ");
 

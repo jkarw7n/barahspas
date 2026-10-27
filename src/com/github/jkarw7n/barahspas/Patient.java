@@ -72,8 +72,8 @@ class Patient extends Person {
             if (record.getKey() == null)
                 throw new IllegalArgumentException("Error: Patient medical record date cannot be null.");
 
-            if (record.getKey().getYear() < 1900)
-                throw new IllegalArgumentException("Error: Patient medical record date cannot be earlier than 1900.");
+            if (record.getKey().getYear() < 2000)
+                throw new IllegalArgumentException("Error: Patient medical record date cannot be earlier than 2000.");
 
             if (record.getKey().isAfter(LocalDate.now()))
                 throw new IllegalArgumentException("Error: Patient medical record date cannot be later than " + LocalDate.now() + ".");
