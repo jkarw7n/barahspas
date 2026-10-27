@@ -168,7 +168,7 @@ class GUI implements ActionListener {
         }
 
         JLabel patientIdLabel = new JLabel("Patient ID");
-        JSpinner patientIdSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 1000, 1));
+        JSpinner patientIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 1000, 1));
 
         patientIdSpinner.setMaximumSize(patientIdSpinner.getPreferredSize());
 
@@ -205,6 +205,34 @@ class GUI implements ActionListener {
         JButton quickSearchButton = new JButton("Quick Search");
 
         quickSearchButton.setMnemonic('q');
+        quickSearchButton.setToolTipText("Quick Search Patients");
+        quickSearchButton.addActionListener(e -> {
+            Map<String, Object> map = new HashMap<>();
+
+            if ((int) patientIdSpinner.getValue() > 0)
+                map.put("PatientID", (int) patientIdSpinner.getValue());
+
+            if (firstNameField.getText() != null && !firstNameField.getText().isBlank())
+                map.put("FirstName", firstNameField.getText());
+
+            if (lastNameField.getText() != null && !lastNameField.getText().isBlank())
+                map.put("LastName", lastNameField.getText());
+
+            if (mobileNumberField.getText() != null && !mobileNumberField.getText().isBlank())
+                map.put("MobileNumber", mobileNumberField.getText());
+
+            if (map.size() > 0) {
+                patientsTableModel.setRowCount(0);
+
+                try {
+                    new QueryManager().filterPatients(map).forEach((patient) -> {
+                        patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getAge(), patient.getSex(), "Open in dialog"});
+                    });
+                } catch (SQLException sqle) {
+                    Dialog.showError(sqle.getMessage());
+                }
+            }
+        });
 
         quickSearchPanel.add(quickSearchButton);
 
@@ -212,7 +240,7 @@ class GUI implements ActionListener {
             component.setAlignmentX(JComponent.LEFT_ALIGNMENT);
         }
 
-        for (JButton button : new JButton[] {searchButton, registerButton, updateButton, deleteButton, quickSearchButton}) {
+        for (JButton button : new JButton[] {searchButton, registerButton, updateButton, deleteButton}) {
             button.addActionListener(this);
         }
 
@@ -231,9 +259,7 @@ class GUI implements ActionListener {
 
         JTable table = new JTable(patientsTableModel);
 
-        for (Patient patient : new QueryManager().getAllPatients()) {
-            patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(DateTimeFormatter.ofPattern("MMMM d, yyyy")), patient.getAge(), patient.getSex(), "Open in dialog"});
-        }
+        cleanPatientsTableModel();
 
         JTextField editor = new JTextField();
 
@@ -289,6 +315,14 @@ class GUI implements ActionListener {
         frame.setVisible(true);
     }
 
+    private void cleanPatientsTableModel() throws SQLException {
+        patientsTableModel.setRowCount(0);
+
+        for (Patient patient : new QueryManager().getAllPatients()) {
+            patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(DateTimeFormatter.ofPattern("MMMM d, yyyy")), patient.getAge(), patient.getSex(), "Open in dialog"});
+        }
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         String text = null;
@@ -301,14 +335,10 @@ class GUI implements ActionListener {
         if (text.equals("Search Patients")) {
             String[] components = {"Patient ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
             List<Object> list = new Dialog(false, components).showDialog(text);
-            
-            patientsTableModel.setRowCount(0);
 
             if (list == null) {
                 try {
-                    new QueryManager().getAllPatients().forEach((patient) -> {
-                        patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(DateTimeFormatter.ofPattern("MMMM d, yyyy")), patient.getAge(), patient.getSex(), "Open in dialog"});
-                    });
+                    cleanPatientsTableModel();
                 } catch (SQLException sqle) {
                     Dialog.showError(sqle.getMessage());
                 }
@@ -325,6 +355,8 @@ class GUI implements ActionListener {
                         }
                     }
 
+                    patientsTableModel.setRowCount(0);
+
                     new QueryManager().filterPatients(map).forEach((patient) -> {
                         patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getAge(), patient.getSex(), "Open in dialog"});
                     });
@@ -338,15 +370,53 @@ class GUI implements ActionListener {
 
             if (list != null && list.get(0) != null) {
                 try {
-                    Patient patient = new QueryManager().registerPatient(new Patient((String) list.get(0), (String) list.get(1), (String) list.get(2), (String) list.get(3), (String) list.get(4), (String) list.get(5), (LocalDate) list.get(6), (String) list.get(7)));
+                    new QueryManager().registerPatient(new Patient((String) list.get(0), (String) list.get(1), (String) list.get(2), (String) list.get(3), (String) list.get(4), (String) list.get(5), (LocalDate) list.get(6), (String) list.get(7)));
 
-                    patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(DateTimeFormatter.ofPattern("MMMM d, yyyy")), patient.getAge(), patient.getSex(), "Open in dialog"});
+                    cleanPatientsTableModel();
                 } catch (SQLException sqle) {
                     Dialog.showError(sqle.getMessage());
                 }
             }
         } else if (text.equals("Update Patient")) {
-            
+            int patientId = Dialog.showIdDialog(text, "Patient ID");
+
+            if (patientId > 0) {
+                try {
+                    String[] components = {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
+                    Patient patient = new QueryManager().getPatient(patientId);
+                    List<Object> list = new Dialog(true, components).showFilledDialog(text, new Object[] {patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getSex()});
+
+                    if (list != null && list.get(0) != null) {
+                        patient = new Patient((String) list.get(0), (String) list.get(1), (String) list.get(2), (String) list.get(3), (String) list.get(4), (String) list.get(5), (LocalDate) list.get(6), (String) list.get(7));
+
+                        patient.setId(patientId);
+
+                        new QueryManager().updatePatient(patient);
+
+                        cleanPatientsTableModel();
+                    }
+                } catch (SQLException sqle) {
+                    Dialog.showError(sqle.getMessage());
+                }
+            }
+        } else if (text.equals("Delete Patient")) {
+            int patientId = Dialog.showIdDialog(text, "Patient ID");
+
+            if (patientId > 0) {
+                try {
+                    int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete patient " + new QueryManager().getPatient(patientId).getFullName() + "?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+                    if (result == JOptionPane.YES_OPTION) {
+                        new QueryManager().deletePatient(new QueryManager().getPatient(patientId));
+
+                        cleanPatientsTableModel();
+                    }
+                } catch (SQLException sqle) {
+                    Dialog.showError(sqle.getMessage());
+                }
+            }
+        } else if (text.equals("Quick Search Patients")) {
+
         }
     }
 }
