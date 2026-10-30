@@ -11,7 +11,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -813,6 +812,12 @@ class GUI implements ActionListener {
             if (appointmentId > 0) {
                 try {
                     Appointment appointment = new QueryManager().getAppointment(appointmentId);
+
+                    if (appointment.getDate().isAfter(LocalDate.now())) {
+                        Dialog.showErrorDialog("Appointment cannot be marked as completed before the input appointment date. Please update the appointment first.");
+
+                        return;
+                    }
 
                     if (appointment.getMedicalStaff().canDiagnoseAndPrescribe()) {
                         String[] components = {"Appointment Diagnosis", "Appointment Prescription", "Appointment Notes"};

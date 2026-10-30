@@ -91,16 +91,17 @@ class Dialog {
             assignedProgramBox = new JComboBox<>(forSearching ? new String[] {"None", "Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"} : new String[] {"Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"});
 
         // Spinners
+        LocalDate dateToday = LocalDate.now();
         JSpinner patientIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 10000, 1)),
             birthDateMonthSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
             birthDateDaySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 31, 1)),
-            birthDateYearSpinner = new JSpinner(new SpinnerNumberModel(1900, 1900, LocalDate.now().getYear(), 1)),
+            birthDateYearSpinner = new JSpinner(new SpinnerNumberModel(1900, 1900, dateToday.getYear(), 1)),
             appointmentIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 10000, 1)),
             appointmentMedicalStaffIdSpinner = new JSpinner(forSearching ? new SpinnerNumberModel(0, 0, 10000, 1) : new SpinnerNumberModel(1, 1, 10000, 1)),
             appointmentPatientIdSpinner = new JSpinner(forSearching ? new SpinnerNumberModel(0, 0, 10000, 1) : new SpinnerNumberModel(1, 1, 10000, 1)),
-            appointmentDateMonthSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
-            appointmentDateDaySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 31, 1)),
-            appointmentDateYearSpinner = new JSpinner(new SpinnerNumberModel(LocalDate.now().getYear(), LocalDate.now().getYear(), 3000, 1)),
+            appointmentDateMonthSpinner = new JSpinner(forSearching ? new SpinnerNumberModel(1, 1, 12, 1) : new SpinnerNumberModel(dateToday.getMonthValue(), 1, 12, 1)),
+            appointmentDateDaySpinner = new JSpinner(forSearching ? new SpinnerNumberModel(1, 1, 31, 1) : new SpinnerNumberModel(dateToday.getDayOfMonth(), 1, 31, 1)),
+            appointmentDateYearSpinner = new JSpinner(new SpinnerNumberModel(dateToday.getYear(), dateToday.getYear(), 3000, 1)),
             startTimeHourSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
             startTimeMinuteSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1)),
             endTimeHourSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
@@ -118,7 +119,7 @@ class Dialog {
         endTimeMinuteSpinner.setEditor(new JSpinner.NumberEditor(endTimeMinuteSpinner, "00"));
 
         // Force license number spinner values to always be seven-digit
-        licenseNumberSpinner.putClientProperty("isLicenseNumber", true);
+        licenseNumberSpinner.putClientProperty("isLicenseNumber", "");
         licenseNumberSpinner.setEditor(new JSpinner.NumberEditor(licenseNumberSpinner, "0000000"));
 
         // Add components to panels
@@ -506,7 +507,6 @@ class Dialog {
                         inputValues.add(null);
                 else
                     inputValues.add((int) spinner.getValue());
-                    System.out.println("C");
             } else if (component instanceof JPanel panel) {
                 // checks if the panel is for inputting dates or timestamps
                 if (panel.getComponent(2) instanceof JSpinner yearSpinner) {
@@ -514,7 +514,7 @@ class Dialog {
                         dayValue = (int) ((JSpinner) panel.getComponent(1)).getValue(),
                         yearValue = (int) yearSpinner.getValue();
                         
-                    if ((monthValue == 1 && dayValue == 1 && (yearValue == 1900 || yearValue == LocalDate.now().getYear()) && forSearching))
+                    if (monthValue == 1 && dayValue == 1 && (yearValue == 1900 || yearValue == LocalDate.now().getYear()) && forSearching)
                         inputValues.add(null);
                     else
                         inputValues.add(LocalDate.of(yearValue, monthValue, dayValue));
