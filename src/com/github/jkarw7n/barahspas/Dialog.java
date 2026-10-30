@@ -1,8 +1,10 @@
 package com.github.jkarw7n.barahspas;
 
+import com.formdev.flatlaf.FlatClientProperties;
 import java.awt.Component;
 import java.awt.GridLayout;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JComboBox;
@@ -10,76 +12,231 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 
-import com.formdev.flatlaf.FlatClientProperties;
-
 class Dialog {
-    private boolean notForSearching;
+    private boolean forSearching;
     private JPanel dialogPanel;
-    private List<Integer> nonnullableIndices;
+    private List<Integer> nonNullableIndices;
 
-    public Dialog(boolean notForSearching, String... components) {
-        this.notForSearching = notForSearching;
+    public Dialog(boolean forSearching, String[] dialogComponents) {
+        this.forSearching = forSearching;
+
         dialogPanel = new JPanel(new GridLayout(0, 2, 5, 5));
-        nonnullableIndices = new ArrayList<>();
+        nonNullableIndices = new ArrayList<>();
 
-        JLabel patientIdLabel = new JLabel("Patient ID"),
-            firstNameLabel = new JLabel("First Name (*)"),
+        // General dialog labels
+        JLabel firstNameLabel = requiredLabel("First Name"),
             middleNameLabel = new JLabel("Middle Name"),
-            lastNameLabel = new JLabel("Last Name (*)"),
+            lastNameLabel = requiredLabel("Last Name"),
             nameSuffixLabel = new JLabel("Name Suffix"),
-            mobileNumberLabel = new JLabel("Mobile Number (*)"),
-            emailAddressLabel = new JLabel("Email Address"),
-            birthDateLabel = new JLabel("Birth Date (Month, Day, Year)"),
-            patientSexLabel = new JLabel("Patient Sex");
+            mobileNumberLabel = requiredLabel("Mobile Number"),
+            emailAddressLabel = new JLabel("Email Address");
 
-        JSpinner patientIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 1000, 1));
+        // Patient dialog labels
+        JLabel patientIdLabel = new JLabel("Patient ID"),
+            birthDateLabel = requiredLabel("Birth Date (Month, Day, Year)"),
+            patientSexLabel = requiredLabel("Patient Sex");
+
+        // Appointment dialog labels
+        JLabel appointmentIdLabel = new JLabel("Appointment ID"),
+            appointmentMedicalStaffIdLabel = requiredLabel("Medical Staff ID"),
+            appointmentPatientIdLabel = requiredLabel("Patient ID"),
+            appointmentDateLabel = requiredLabel("Appointment Date"),
+            startTimeLabel = requiredLabel("Start Time"),
+            endTimeLabel = requiredLabel("End Time"),
+            appointmentDiagnosisLabel = requiredLabel("Appointment Diagnosis"),
+            appointmentPrescriptionLabel = requiredLabel("Appointment Prescription"),
+            appointmentNotesLabel = new JLabel("Appointment Notes");
+
+        // Medical Staff dialog labels
+        JLabel medicalStaffIdLabel = new JLabel("Medical Staff ID"),
+            licenseNumberLabel = new JLabel("License Number"),
+            employmentTypeLabel = requiredLabel("Employment Type"),
+            shiftScheduleLabel = new JLabel("Shift Schedule"),
+            medicalStaffTypeLabel = requiredLabel("Medical Staff Type"),
+            doctorSpecializationLabel = new JLabel("Doctor Specialization"),
+            assignedProgramLabel = new JLabel("Assigned Program");
+
+        // Grid layouts
+        GridLayout gridLayout = new GridLayout(1, 3, 5, 0);
+
+        // Panels
+        JPanel birthDatePanel = new JPanel(gridLayout),
+            appointmentDatePanel = new JPanel(gridLayout),
+            startTimePanel = new JPanel(gridLayout),
+            endTimePanel = new JPanel(gridLayout);
+
+        // Text fields
         JTextField firstNameField = new JTextField(),
             middleNameField = new JTextField(),
-            lastNameField = new JTextField();
-        JComboBox<String> nameSuffixBox = new JComboBox<>(new String[] {"None", "Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"});
-        JTextField mobileNumberField = new JTextField(),
-            emailAddressField = new JTextField();
-        JPanel birthDatePanel = new JPanel(new GridLayout(1, 3, 5, 0));
-        JSpinner monthSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
-            daySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 31, 1)),
-            yearSpinner = new JSpinner(new SpinnerNumberModel(1900, 1900, LocalDate.now().getYear(), 1));
-        JComboBox<String> patientSexBox = new JComboBox<>(notForSearching ? new String[] {"Male", "Female"} : new String[] {"None", "Male", "Female"});
+            lastNameField = new JTextField(),
+            mobileNumberField = new JTextField(),
+            emailAddressField = new JTextField(),
+            shiftScheduleField = new JTextField(),
+            doctorSpecializationField = new JTextField(),
+            appointmentDiagnosisField = new JTextField(),
+            appointmentPrescriptionField = new JTextField(),
+            appointmentNotesField = new JTextField();
 
-        yearSpinner.setEditor(new JSpinner.NumberEditor(yearSpinner, "#"));
+        // Combo boxes
+        JComboBox<String> nameSuffixBox = new JComboBox<>(new String[] {"None", "Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"}),
+            patientSexBox = new JComboBox<>(forSearching ? new String[] {"None", "Male", "Female"} : new String[] {"Male", "Female"}),
+            startTimeMeridianBox = new JComboBox<>(new String[] {"AM", "PM"}),
+            endTimeMeridianBox = new JComboBox<>(new String[] {"AM", "PM"}),
+            employmentTypeBox = new JComboBox<>(forSearching ? new String[] {"None", "Plantilla", "Doctors to the Barrio", "Contract of Service", "Volunteer"} : new String[] {"Plantilla", "Doctors to the Barrio", "Contract of Service", "Volunteer"}),
+            medicalStaffTypeBox = new JComboBox<>(forSearching ? new String[] {"None", "Doctor", "Nurse"} : new String[] {"Doctor", "Nurse"}),
+            assignedProgramBox = new JComboBox<>(forSearching ? new String[] {"None", "Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"} : new String[] {"Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"});
 
-        birthDatePanel.add(monthSpinner);
-        birthDatePanel.add(daySpinner);
-        birthDatePanel.add(yearSpinner);
+        // Spinners
+        JSpinner patientIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 10000, 1)),
+            birthDateMonthSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
+            birthDateDaySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 31, 1)),
+            birthDateYearSpinner = new JSpinner(new SpinnerNumberModel(1900, 1900, LocalDate.now().getYear(), 1)),
+            appointmentIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 10000, 1)),
+            appointmentMedicalStaffIdSpinner = new JSpinner(forSearching ? new SpinnerNumberModel(0, 0, 10000, 1) : new SpinnerNumberModel(1, 1, 10000, 1)),
+            appointmentPatientIdSpinner = new JSpinner(forSearching ? new SpinnerNumberModel(0, 0, 10000, 1) : new SpinnerNumberModel(1, 1, 10000, 1)),
+            appointmentDateMonthSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
+            appointmentDateDaySpinner = new JSpinner(new SpinnerNumberModel(1, 1, 31, 1)),
+            appointmentDateYearSpinner = new JSpinner(new SpinnerNumberModel(LocalDate.now().getYear(), LocalDate.now().getYear(), 3000, 1)),
+            startTimeHourSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
+            startTimeMinuteSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1)),
+            endTimeHourSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
+            endTimeMinuteSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1)),
+            medicalStaffIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 10000, 1)),
+            licenseNumberSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 9999999, 1));
 
-        patientIdLabel.setToolTipText("Leave as 0 for a null value");
+        // Remove comma from spinner values exceeding 1000
+        for (JSpinner spinner : new JSpinner[] {patientIdSpinner, birthDateYearSpinner, appointmentIdSpinner, appointmentMedicalStaffIdSpinner, appointmentPatientIdSpinner, appointmentDateYearSpinner}) {
+            spinner.setEditor(new JSpinner.NumberEditor(spinner, "#"));
+        }
+
+        // Force minute spinner values to always be two-digit
+        startTimeMinuteSpinner.setEditor(new JSpinner.NumberEditor(startTimeMinuteSpinner, "00"));
+        endTimeMinuteSpinner.setEditor(new JSpinner.NumberEditor(endTimeMinuteSpinner, "00"));
+
+        // Force license number spinner values to always be seven-digit
+        licenseNumberSpinner.putClientProperty("isLicenseNumber", true);
+        licenseNumberSpinner.setEditor(new JSpinner.NumberEditor(licenseNumberSpinner, "0000000"));
+
+        // Add components to panels
+        birthDatePanel.add(birthDateMonthSpinner);
+        birthDatePanel.add(birthDateDaySpinner);
+        birthDatePanel.add(birthDateYearSpinner);
+
+        appointmentDatePanel.add(appointmentDateMonthSpinner);
+        appointmentDatePanel.add(appointmentDateDaySpinner);
+        appointmentDatePanel.add(appointmentDateYearSpinner);
+
+        startTimePanel.add(startTimeHourSpinner);
+        startTimePanel.add(startTimeMinuteSpinner);
+        startTimePanel.add(startTimeMeridianBox);
+
+        endTimePanel.add(endTimeHourSpinner);
+        endTimePanel.add(endTimeMinuteSpinner);
+        endTimePanel.add(endTimeMeridianBox);
+
+        // Add placeholders to text fields
         firstNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter first name here");
         middleNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter middle name here");
         lastNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter last name here");
-        nameSuffixBox.setEditable(false);
         mobileNumberField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter mobile number here");
         emailAddressField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter email address here");
+        shiftScheduleField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter shift schedule here");
+        doctorSpecializationField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter doctor specialization here");
+        appointmentDiagnosisField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter appointment diagnosis here");
+        appointmentPrescriptionField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter appointment prescription here");
+        appointmentNotesField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter appointment notes here");
+
+        // Make combo boxes not editable
+        nameSuffixBox.setEditable(false);
         patientSexBox.setEditable(false);
+        startTimeMeridianBox.setEditable(false);
+        endTimeMeridianBox.setEditable(false);
+        employmentTypeBox.setEditable(false);
+        medicalStaffTypeBox.setEditable(false);
+        assignedProgramBox.setEditable(false);
 
-        if (!notForSearching)
-            birthDateLabel.setToolTipText("Leave as January 1, 1900 for a null value");
+        // Disable editing the doctor specialization field if the Dialog class' medicalStaffType field is not "Doctor", etc., as well as change their label's text and tooltip text
+        if (medicalStaffTypeBox.getItemAt(0).equals("None")) {
+            doctorSpecializationField.setEnabled(false);
+            assignedProgramBox.setEnabled(false);
 
-        for (int i = 0; i < components.length; i++) {
-            switch (components[i]) {
-                case "Patient ID":
-                    dialogPanel.add(patientIdLabel);
-                    dialogPanel.add(patientIdSpinner);
+            doctorSpecializationLabel.setText("Doctor Specialization");
+            doctorSpecializationLabel.setToolTipText(null);
+            assignedProgramLabel.setText("Assigned Program");
+            assignedProgramLabel.setToolTipText(null);
+        } else {
+            doctorSpecializationField.setEnabled(true);
+            assignedProgramBox.setEnabled(false);
+
+            if (!forSearching) {
+                doctorSpecializationLabel.setText("Doctor Specialization (*)");
+                doctorSpecializationLabel.setToolTipText("Required field");
+            }
+
+            assignedProgramLabel.setText("Assigned Program");
+            assignedProgramLabel.setToolTipText(null);
+        }
+
+        medicalStaffTypeBox.addActionListener(e -> {
+            switch ((String) medicalStaffTypeBox.getSelectedItem()) {
+                case "Doctor":
+                    doctorSpecializationField.setEnabled(true);
+                    assignedProgramBox.setEnabled(false);
+
+                    if (!forSearching) {
+                        doctorSpecializationLabel.setText("Doctor Specialization (*)");
+                        doctorSpecializationLabel.setToolTipText("Required field");
+                    }
+
+                    assignedProgramLabel.setText("Assigned Program");
+                    assignedProgramLabel.setToolTipText(null);
+
                     break;
+                case "Nurse":
+                    doctorSpecializationField.setEnabled(false);
+                    assignedProgramBox.setEnabled(true);
+
+                    doctorSpecializationLabel.setText("Doctor Specialization");
+                    doctorSpecializationLabel.setToolTipText(null);
+
+                    if (!forSearching) {
+                        assignedProgramLabel.setText("Assigned Program (*)");
+                        assignedProgramLabel.setToolTipText("Required field");
+                    }
+
+                    break;
+                default:
+                    doctorSpecializationField.setEnabled(false);
+                    assignedProgramBox.setEnabled(false);
+
+                    doctorSpecializationLabel.setText("Doctor Specialization");
+                    doctorSpecializationLabel.setToolTipText(null);
+                    assignedProgramLabel.setText("Assigned Program");
+                    assignedProgramLabel.setToolTipText(null);
+            }
+        });
+
+        if (forSearching) {
+            for (JLabel spinner : new JLabel[] {patientIdLabel, birthDateLabel, appointmentIdLabel, appointmentDateLabel, appointmentMedicalStaffIdLabel, appointmentPatientIdLabel, startTimeLabel, endTimeLabel, medicalStaffIdLabel, licenseNumberLabel}) {
+                spinner.setToolTipText("Leave as is for a null value");
+            }
+        }
+
+        // Add the components in the argument to dialogPanel
+        for (int i = 0; i < dialogComponents.length; i++) {
+            int nonNullableIndex = (i * 2) + 1;
+
+            switch (dialogComponents[i]) {
                 case "First Name":
                     dialogPanel.add(firstNameLabel);
                     dialogPanel.add(firstNameField);
 
-                    if (notForSearching) {
-                        firstNameLabel.setToolTipText("Required field");
-                        nonnullableIndices.add(i);
-                    }
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
 
                     break;
                 case "Middle Name":
@@ -90,11 +247,9 @@ class Dialog {
                     dialogPanel.add(lastNameLabel);
                     dialogPanel.add(lastNameField);
 
-                    if (notForSearching) {
-                        lastNameLabel.setToolTipText("Required field");
-                        nonnullableIndices.add(i);
-                    }
-                    
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
                     break;
                 case "Name Suffix":
                     dialogPanel.add(nameSuffixLabel);
@@ -104,77 +259,200 @@ class Dialog {
                     dialogPanel.add(mobileNumberLabel);
                     dialogPanel.add(mobileNumberField);
 
-                    if (notForSearching) {
-                        mobileNumberLabel.setToolTipText("Required field");
-                        nonnullableIndices.add(i);
-                    }
-                    
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
                     break;
                 case "Email Address":
                     dialogPanel.add(emailAddressLabel);
                     dialogPanel.add(emailAddressField);
                     break;
+                case "Patient ID":
+                    dialogPanel.add(patientIdLabel);
+                    dialogPanel.add(patientIdSpinner);
+                    break;
                 case "Birth Date":
                     dialogPanel.add(birthDateLabel);
                     dialogPanel.add(birthDatePanel);
 
-                    if (notForSearching)
-                        nonnullableIndices.add(i);
-                    
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
                     break;
                 case "Patient Sex":
                     dialogPanel.add(patientSexLabel);
                     dialogPanel.add(patientSexBox);
 
-                    if (notForSearching)
-                        nonnullableIndices.add(i);
-                    
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
                     break;
+                case "Appointment ID":
+                    dialogPanel.add(appointmentIdLabel);
+                    dialogPanel.add(appointmentIdSpinner);
+                    break;
+                case "Medical Staff ID*":
+                    dialogPanel.add(appointmentMedicalStaffIdLabel);
+                    dialogPanel.add(appointmentMedicalStaffIdSpinner);
+
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
+                    break;
+                case "Patient ID*":
+                    dialogPanel.add(appointmentPatientIdLabel);
+                    dialogPanel.add(appointmentPatientIdSpinner);
+
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
+                    break;
+                case "Appointment Date":
+                    dialogPanel.add(appointmentDateLabel);
+                    dialogPanel.add(appointmentDatePanel);
+
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
+                    break;
+                case "Start Time":
+                    dialogPanel.add(startTimeLabel);
+                    dialogPanel.add(startTimePanel);
+
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
+                    break;
+                case "End Time":
+                    dialogPanel.add(endTimeLabel);
+                    dialogPanel.add(endTimePanel);
+
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
+                    break;
+                case "Appointment Diagnosis":
+                    dialogPanel.add(appointmentDiagnosisLabel);
+                    dialogPanel.add(appointmentDiagnosisField);
+                    nonNullableIndices.add(nonNullableIndex);
+                    break;
+                case "Appointment Prescription":
+                    dialogPanel.add(appointmentPrescriptionLabel);
+                    dialogPanel.add(appointmentPrescriptionField);
+                    nonNullableIndices.add(nonNullableIndex);
+                    break;
+                case "Appointment Notes":
+                    dialogPanel.add(appointmentNotesLabel);
+                    dialogPanel.add(appointmentNotesField);
+                    break;
+                case "Medical Staff ID":
+                    dialogPanel.add(medicalStaffIdLabel);
+                    dialogPanel.add(medicalStaffIdSpinner);
+                    break;
+                case "License Number":
+                    dialogPanel.add(licenseNumberLabel);
+                    dialogPanel.add(licenseNumberSpinner);
+                    break;
+                case "Employment Type":
+                    dialogPanel.add(employmentTypeLabel);
+                    dialogPanel.add(employmentTypeBox);
+
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
+                    break;
+                case "Shift Schedule":
+                    dialogPanel.add(shiftScheduleLabel);
+                    dialogPanel.add(shiftScheduleField);
+                    break;
+                case "Medical Staff Type":
+                    dialogPanel.add(medicalStaffTypeLabel);
+                    dialogPanel.add(medicalStaffTypeBox);
+
+                    if (!forSearching)
+                        nonNullableIndices.add(nonNullableIndex);
+
+                    break;
+                case "Doctor Specialization":
+                    dialogPanel.add(doctorSpecializationLabel);
+                    dialogPanel.add(doctorSpecializationField);
+                    break;
+                case "Assigned Program":
+                    dialogPanel.add(assignedProgramLabel);
+                    dialogPanel.add(assignedProgramBox);
+            }
+
+            if (!dialogPanel.isAncestorOf(assignedProgramLabel)) {
+                doctorSpecializationLabel.setText("Doctor Specialization (*)");
+                doctorSpecializationLabel.setToolTipText("Required field");
+                doctorSpecializationField.setEnabled(true);
+            } else if (!dialogPanel.isAncestorOf(doctorSpecializationLabel)) {
+                assignedProgramLabel.setText("Assigned Program (*)");
+                assignedProgramLabel.setToolTipText("Required field");
+                assignedProgramBox.setEnabled(true);
             }
         }
     }
 
-    public List<Object> showDialog(String title) {
-        int result = JOptionPane.showConfirmDialog(null, dialogPanel, title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    public List<Object> showDialog(String dialogTitle) {
+        int result = JOptionPane.showConfirmDialog(null, dialogPanel, dialogTitle, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION)
-            return packedList();
+            return inputValues();
 
         return null;
     }
 
-    public List<Object> showFilledDialog(String title, Object[] values) {
+    // opens a dialog with pre-existing values already filled in
+    public List<Object> showDialog(String dialogTitle, Object[] fillValues) {
         for (int i = 1; i < dialogPanel.getComponentCount(); i += 2) {
             Component component = dialogPanel.getComponent(i);
-            Object value = values[(int) (i - 1) / 2];
+            Object fillValue = fillValues[(int) (i - 1) / 2];
 
-            if (component instanceof JSpinner spinner)
-                spinner.setValue(value);
-            else if (component instanceof JTextField textField)
-                textField.setText((String) value);
+            if (component instanceof JTextField textField)
+                textField.setText((String) fillValue);
             else if (component instanceof JComboBox comboBox)
-                comboBox.setSelectedItem(value);
-            else if (component instanceof JPanel panel) {
-                LocalDate date = (LocalDate) value;
+                comboBox.setSelectedItem(fillValue != null ? fillValue : comboBox.getSelectedItem());
+            else if (component instanceof JSpinner spinner) {
+                spinner.setValue(Integer.parseInt((String) fillValue));
+            } else if (component instanceof JPanel panel) {
+                if (panel.getComponent(2) instanceof JSpinner) {
+                    LocalDate date = (LocalDate) fillValue;
 
-                ((JSpinner) panel.getComponent(0)).setValue(date.getMonthValue());
-                ((JSpinner) panel.getComponent(1)).setValue(date.getDayOfMonth());
-                ((JSpinner) panel.getComponent(2)).setValue(date.getYear());
+                    ((JSpinner) panel.getComponent(0)).setValue(date.getMonthValue());
+                    ((JSpinner) panel.getComponent(1)).setValue(date.getDayOfMonth());
+                    ((JSpinner) panel.getComponent(2)).setValue(date.getYear());
+                } else if (panel.getComponent(2) instanceof JComboBox) {
+                    LocalTime time = (LocalTime) fillValue;
+                    int hourValue = time.getHour();
+
+                    if (hourValue > 11) {
+                        if (hourValue > 12)
+                            hourValue -= 12;
+
+                        if (panel.getComponent(2) instanceof JComboBox comboBox)
+                            comboBox.setSelectedItem("PM");
+                    } else {
+                        if (hourValue == 0)
+                            hourValue = 12;
+
+                        if (panel.getComponent(2) instanceof JComboBox comboBox)
+                            comboBox.setSelectedItem("AM");
+                    }
+
+                    ((JSpinner) panel.getComponent(0)).setValue(hourValue);
+                    ((JSpinner) panel.getComponent(1)).setValue(time.getMinute());
+                }
             }
         }
 
-        int result = JOptionPane.showConfirmDialog(null, dialogPanel, title, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-
-        if (result == JOptionPane.OK_OPTION)
-            return packedList();
-
-        return null;
+        return showDialog(dialogTitle);
     }
 
-    public static int showIdDialog(String dialogTitle, String labelTitle) {
+    public static int showIdDialog(String dialogTitle, String labelText) {
         JPanel panel = new JPanel(new GridLayout(1, 2, 5, 0));
-        JLabel label = new JLabel(labelTitle + " (*)");
-        JSpinner spinner = new JSpinner(new SpinnerNumberModel(1, 1, 1000, 1));
+        JLabel label = new JLabel(labelText + " (*)");
+        JSpinner spinner = new JSpinner(new SpinnerNumberModel(1, 1, 10000, 1));
 
         label.setToolTipText("Required field");
 
@@ -185,67 +463,95 @@ class Dialog {
 
         if (result == JOptionPane.OK_OPTION)
             return (int) spinner.getValue();
-        else {
-            showError("ID cannot be null or blank.");
-            return 0;
-        }
+        else
+            showErrorDialog("ID cannot be null or blank.");
+
+        return 0;
     }
 
-    private List<Object> packedList() {
-        List<Object> list = new ArrayList<>();
-        boolean allNull = true;
+    public static void showErrorDialog(String errorMessage) {
+        JOptionPane.showMessageDialog(null, errorMessage, "An error occurred", JOptionPane.ERROR_MESSAGE);
+    }
 
-        for (int i = 1; i < dialogPanel.getComponents().length; i += 2) {
+    private List<Object> inputValues() {
+        List<Object> inputValues = new ArrayList<>();
+
+        // checks all of dialogPanel's odd-indexed components for input values
+        for (int i = 1; i < dialogPanel.getComponentCount(); i += 2) {
             Component component = dialogPanel.getComponent(i);
 
-            if (component instanceof JSpinner spinner) {
-                if ((int) spinner.getValue() == 0) {
-                    if (nonnullableIndices.contains((int) (i - 1) / 2))
-                        showError("Non-nullable spinner value must not be 0.");
-                    else
-                        list.add(null);
-                } else {
-                    list.add((int) spinner.getValue());
-                    allNull = false;
-                }
-            } else if (component instanceof JTextField textField) {
+            if (component instanceof JTextField textField) {
                 if (textField.getText() == null || textField.getText().isBlank()) {
-                    if (nonnullableIndices.contains((int) (i - 1) / 2))
-                        showError("Non-nullable text field value must not be null or blank.");
+                    if (nonNullableIndices.contains(i) && textField.isEnabled() && !forSearching)
+                        showErrorDialog("Required text field's value cannot be null or blank.");
                     else
-                        list.add(null);
-                } else {
-                    list.add(textField.getText().strip());
-                    allNull = false;
-                }
+                        inputValues.add(null);
+                } else
+                    inputValues.add(textField.getText().strip());
             } else if (component instanceof JComboBox comboBox) {
-                if (comboBox.getSelectedItem().equals("None"))
-                    list.add(null);
-                else {
-                    list.add(comboBox.getSelectedItem());
-                    allNull = false;
-                }
+                if (comboBox.getSelectedItem().equals("None")) {
+                    if (nonNullableIndices.contains(i) && comboBox.isEnabled() && !forSearching) {
+                        showErrorDialog("Required combo box's selected value cannot be \"None\".");
+                    } else
+                        inputValues.add(null);
+                } else
+                    inputValues.add(comboBox.getSelectedItem());
+            } else if (component instanceof JSpinner spinner) {
+                if (spinner.getClientProperty("isLicenseNumber") != null && (int) spinner.getValue() != 0)
+                    inputValues.add(String.format("%07d", (int) spinner.getValue()));
+                else if ((int) spinner.getValue() == 0)
+                    if (nonNullableIndices.contains(i) && !forSearching)
+                        showErrorDialog("Required spinner field's value cannot be 0.");
+                    else
+                        inputValues.add(null);
+                else
+                    inputValues.add((int) spinner.getValue());
+                    System.out.println("C");
             } else if (component instanceof JPanel panel) {
-                int month = (int) ((JSpinner) panel.getComponent(0)).getValue(),
-                    day = (int) ((JSpinner) panel.getComponent(1)).getValue(),
-                    year = (int) ((JSpinner) panel.getComponent(2)).getValue();
+                // checks if the panel is for inputting dates or timestamps
+                if (panel.getComponent(2) instanceof JSpinner yearSpinner) {
+                    int monthValue = (int) ((JSpinner) panel.getComponent(0)).getValue(),
+                        dayValue = (int) ((JSpinner) panel.getComponent(1)).getValue(),
+                        yearValue = (int) yearSpinner.getValue();
+                        
+                    if ((monthValue == 1 && dayValue == 1 && (yearValue == 1900 || yearValue == LocalDate.now().getYear()) && forSearching))
+                        inputValues.add(null);
+                    else
+                        inputValues.add(LocalDate.of(yearValue, monthValue, dayValue));
+                } else if (panel.getComponent(2) instanceof JComboBox comboBox) {
+                    int hourValue = (int) ((JSpinner) panel.getComponent(0)).getValue(),
+                        minuteValue = (int) ((JSpinner) panel.getComponent(1)).getValue();
+                    String meridianValue = (String) comboBox.getSelectedItem();
 
-                if (month == 1 && day == 1 && year == 1900 && !notForSearching)
-                    list.add(null);
-                else {
-                    list.add(LocalDate.of(year, month, day));
-                    allNull = false;
-                }
+                    if (meridianValue.equals("AM")) {
+                        if (hourValue == 12)
+                            hourValue = 0;
+                    } else if (hourValue != 12)
+                        hourValue += 12;
+
+                    if (hourValue == 1 && minuteValue == 0 && meridianValue.equals("AM") && forSearching)
+                        inputValues.add(null);
+                    else
+                        inputValues.add(LocalTime.of(hourValue, minuteValue));
+                } else if (component instanceof JTextArea textArea)
+                    inputValues.add(textArea.getText().strip());
             }
         }
 
-        if (!allNull)
-            return list;
-        else
-            return null;
+        for (Object value : inputValues) {
+            if (value != null)
+                return inputValues;
+        }
+
+        return null;
     }
 
-    public static void showError(String message) {
-        JOptionPane.showMessageDialog(null, message, "An error occurred", JOptionPane.ERROR_MESSAGE);
-    }
+    private JLabel requiredLabel(String labelText) {
+        JLabel label = new JLabel(forSearching ? labelText : labelText + " (*)");
+        
+        if (!forSearching)
+            label.setToolTipText("Required field");
+
+        return label;
+    } 
 }

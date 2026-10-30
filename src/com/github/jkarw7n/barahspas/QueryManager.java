@@ -9,10 +9,9 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 class QueryManager {
     private static final String DATABASE_URL = "jdbc:sqlite:barahspas.db";
@@ -35,7 +34,7 @@ class QueryManager {
                     EmploymentType TEXT NOT NULL,
                     ShiftSchedule TEXT,
                     MedicalStaffType TEXT NOT NULL,
-                    Specialization TEXT,
+                    DoctorSpecialization TEXT,
                     AssignedProgram TEXT,
                     IsDeleted BOOLEAN DEFAULT 0,
                     CONSTRAINT UniqueStaffIdentity UNIQUE (FirstName, MiddleName, LastName, NameSuffix, MobileNumber)
@@ -103,7 +102,7 @@ class QueryManager {
             WHERE
                 MedicalStaffID = ?
                 AND
-                IsDeleted = FALSE;
+                IsDeleted = 0;
         """;
 
         PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -122,7 +121,7 @@ class QueryManager {
                         set.getString("LicenseNumber"),
                         set.getString("EmploymentType"),
                         set.getString("ShiftSchedule"),
-                        set.getString("Specialization")
+                        set.getString("DoctorSpecialization")
                     );
                 } else {
                     medicalStaff = new Nurse(
@@ -152,7 +151,7 @@ class QueryManager {
         String query = """
             SELECT MedicalStaffID
             FROM MedicalStaff
-            WHERE IsDeleted = FALSE;
+            WHERE IsDeleted = 0;
         """;
 
         Statement statement = connection.createStatement();
@@ -171,7 +170,7 @@ class QueryManager {
             throw new IllegalArgumentException("Error: Medical staff filter cannot be null or empty.");
 
         List<MedicalStaff> list = new ArrayList<>();
-        String query = "SELECT MedicalStaffID FROM MedicalStaff WHERE IsDeleted = FALSE";
+        String query = "SELECT MedicalStaffID FROM MedicalStaff WHERE IsDeleted = 0";
 
         for (Map.Entry<String, Object> entry : filters.entrySet()) {
             String stringApostrophe = entry.getValue() instanceof String ? "'" : "";
@@ -207,7 +206,7 @@ class QueryManager {
                 EmploymentType,
                 ShiftSchedule,
                 MedicalStaffType,
-                Specialization,
+                DoctorSpecialization,
                 AssignedProgram
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """;
@@ -249,7 +248,7 @@ class QueryManager {
             throw new IllegalArgumentException("Error: Medical staff ID cannot be equal to or less than zero.");
 
         String query = """
-            INSERT INTO MedicalStaff (FirstName, MiddleName, LastName, NameSuffix, MobileNumber, EmailAddress, LicenseNumber, EmploymentType, ShiftSchedule, MedicalStaffType, Specialization, AssignedProgram, MedicalStaffID)
+            INSERT INTO MedicalStaff (FirstName, MiddleName, LastName, NameSuffix, MobileNumber, EmailAddress, LicenseNumber, EmploymentType, ShiftSchedule, MedicalStaffType, DoctorSpecialization, AssignedProgram, MedicalStaffID)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (MedicalStaffID)
             DO UPDATE SET
@@ -259,11 +258,11 @@ class QueryManager {
                 NameSuffix = EXCLUDED.NameSuffix,
                 MobileNumber = EXCLUDED.MobileNumber,
                 EmailAddress = EXCLUDED.EmailAddress,
-                LicenseNumber LicenseNumber,
+                LicenseNumber = EXCLUDED.LicenseNumber,
                 EmploymentType = EXCLUDED.EmploymentType,
                 ShiftSchedule = EXCLUDED.ShiftSchedule,
                 MedicalStaffType = EXCLUDED.MedicalStaffType,
-                Specialization = EXCLUDED.Specialization,
+                DoctorSpecialization = EXCLUDED.DoctorSpecialization,
                 AssignedProgram = EXCLUDED.AssignedProgram;
         """;
 
@@ -299,7 +298,7 @@ class QueryManager {
 
         String query = """
             UPDATE MedicalStaff
-            SET IsDeleted = TRUE
+            SET IsDeleted = 1
             WHERE MedicalStaffID = ?;
         """;
 
@@ -321,7 +320,7 @@ class QueryManager {
             WHERE
                 PatientID = ?
                 AND
-                IsDeleted = FALSE;
+                IsDeleted = 0;
         """;
 
         PreparedStatement patientStatement = connection.prepareStatement(patientQuery);
@@ -344,7 +343,7 @@ class QueryManager {
             }
         }
 
-        SortedMap<LocalDate, String> medicalRecords = new TreeMap<>();
+        List<Object[]> medicalRecords = new ArrayList<>();
 
         String medicalRecordQuery = """
             SELECT *
@@ -352,7 +351,7 @@ class QueryManager {
             WHERE
                 PatientID = ?
                 AND
-                IsDeleted = FALSE;
+                IsDeleted = 0;
         """;
 
         PreparedStatement medicalRecordStatement = connection.prepareStatement(medicalRecordQuery);
@@ -360,13 +359,14 @@ class QueryManager {
 
         try (ResultSet set = medicalRecordStatement.executeQuery()) {
             while (set.next()) {
-                medicalRecords.put(
+                medicalRecords.add(new Object[] {
                     LocalDate.parse(set.getString("DateRecorded")),
                     set.getString("MedicalRecord")
-                );
+                });
             }
         }
 
+        medicalRecords.sort(Comparator.comparing(medicalRecord -> (LocalDate) medicalRecord[0]));
         patient.setMedicalRecords(medicalRecords);
         return patient;
     }
@@ -377,7 +377,7 @@ class QueryManager {
         String query = """
             SELECT PatientID
             FROM Patient
-            WHERE IsDeleted = FALSE;
+            WHERE IsDeleted = 0;
         """;
 
         Statement statement = connection.createStatement();
@@ -396,7 +396,7 @@ class QueryManager {
             throw new IllegalArgumentException("Error: Patients filter cannot be null or empty.");
 
         List<Patient> list = new ArrayList<>();
-        String query = "SELECT PatientID FROM Patient WHERE IsDeleted = FALSE";
+        String query = "SELECT PatientID FROM Patient WHERE IsDeleted = 0";
 
         for (Map.Entry<String, Object> entry : filters.entrySet()) {
             String stringApostrophe = entry.getValue() instanceof String ? "'" : "";
@@ -492,7 +492,7 @@ class QueryManager {
 
         String query = """
             UPDATE Patient
-            SET IsDeleted = TRUE
+            SET IsDeleted = 1
             WHERE PatientID = ?;
         """;
 
@@ -514,7 +514,7 @@ class QueryManager {
             WHERE
                 AppointmentID = ?
                 AND
-                IsDeleted = FALSE;
+                IsDeleted = 0;
         """;
 
         PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -530,7 +530,11 @@ class QueryManager {
                     LocalTime.parse(set.getString("EndTime"))
                 );
 
-                appointment.setId(set.getInt(1));
+                appointment.setId(set.getInt("AppointmentID"));
+                appointment.setStatus(set.getString("AppointmentStatus"));
+                appointment.setDiagnosis(set.getString("AppointmentDiagnosis"));
+                appointment.setPrescription(set.getString("AppointmentPrescription"));
+                appointment.setNotes(set.getString("AppointmentNotes"));
             }
         }
 
@@ -543,7 +547,7 @@ class QueryManager {
         String query = """
             SELECT AppointmentID
             FROM Appointment
-            WHERE IsDeleted = FALSE;
+            WHERE IsDeleted = 0;
         """;
 
         Statement statement = connection.createStatement();
@@ -562,7 +566,7 @@ class QueryManager {
             throw new IllegalArgumentException("Error: Appointments filter cannot be null or empty.");
 
         List<Appointment> list = new ArrayList<>();
-        String query = "SELECT AppointmentID FROM Appointment WHERE IsDeleted = FALSE";
+        String query = "SELECT AppointmentID FROM Appointment WHERE IsDeleted = 0";
 
         for (Map.Entry<String, Object> entry : filters.entrySet()) {
             String stringApostrophe = entry.getValue() instanceof String ? "'" : "";
@@ -664,8 +668,12 @@ class QueryManager {
             preparedStatement.setString(2, appointment.getPrescription());
             preparedStatement.setString(3, appointment.getNotes());
             preparedStatement.setInt(4, appointment.getId());
-            addMedicalRecord(appointment.getPatient().getId(), "Diagnosis: " + appointment.getDiagnosis());
-            addMedicalRecord(appointment.getPatient().getId(), "Prescription: " + appointment.getPrescription());
+
+            if (appointment.getDiagnosis() != null && !appointment.getDiagnosis().isBlank())
+                addMedicalRecord(appointment.getPatient().getId(), "Diagnosis: " + appointment.getDiagnosis());
+
+            if (appointment.getPrescription() != null && !appointment.getPrescription().isBlank())
+                addMedicalRecord(appointment.getPatient().getId(), "Prescription: " + appointment.getPrescription());
         } else {
             query = """
                 UPDATE Appointment
@@ -706,7 +714,7 @@ class QueryManager {
 
         String query = """
             UPDATE Appointment
-            SET IsDeleted = TRUE
+            SET IsDeleted = 1
             WHERE AppointmentID = ?;
         """;
 
@@ -754,7 +762,7 @@ class QueryManager {
 
         String query = """
             UPDATE MedicalRecord
-            SET IsDeleted = TRUE
+            SET IsDeleted = 1
             WHERE
                 PatientID = ?
                 AND

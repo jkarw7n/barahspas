@@ -87,18 +87,18 @@ class Nurse extends MedicalStaff {
 class Patient extends Person {
     - LocalDate birthDate
     - String sex
-    - SortedMap<LocalDate, String> medicalRecords
+    - List<Object[]> medicalRecords
     __
     + Patient()
     + Patient(String firstName, String middleName, String\nlastName, String nameSuffix, String mobileNumber,\nString emailAddress, LocalDate birthDate, String sex)
     .. Getters ..
     + LocalDate getBirthDate()
     + String getSex()
-    + SortedMap<LocalDate, String> getMedicalRecords()
+    + List<Object[]> getMedicalRecords()
     .. Setters ..
     + void setBirthDate(LocalDate birthDate)
     + void setSex(String sex)
-    + void setMedicalRecords(SortedMap<LocalDate,\nString> medicalRecords)
+    + void setMedicalRecords(List<Object[]> medicalRecords)
     .. Other Methods ..
     + long getAge()
 }

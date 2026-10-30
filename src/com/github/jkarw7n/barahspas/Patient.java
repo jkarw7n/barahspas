@@ -2,12 +2,12 @@ package com.github.jkarw7n.barahspas;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.SortedMap;
+import java.util.List;
 
 class Patient extends Person {
     private LocalDate birthDate;
     private String sex;
-    private SortedMap<LocalDate, String> medicalRecords;
+    private List<Object[]> medicalRecords;
 
     public Patient() {
         super();
@@ -40,7 +40,7 @@ class Patient extends Person {
 
     public LocalDate getBirthDate() { return birthDate; }
     public String getSex() { return sex; }
-    public SortedMap<LocalDate, String> getMedicalRecords() { return medicalRecords; }
+    public List<Object[]> getMedicalRecords() { return medicalRecords; }
 
     public void setBirthDate(LocalDate birthDate) {
         if (birthDate == null)
@@ -62,23 +62,23 @@ class Patient extends Person {
         this.sex = sex;
     }
 
-    public void setMedicalRecords(SortedMap<LocalDate, String> medicalRecords) {
+    public void setMedicalRecords(List<Object[]> medicalRecords) {
         if (medicalRecords == null || medicalRecords.size() == 0) {
             this.medicalRecords = null;
             return;
         }
 
-        for (SortedMap.Entry<LocalDate, String> record : medicalRecords.entrySet()) {
-            if (record.getKey() == null)
+        for (Object[] record : medicalRecords) {
+            if (record[0] == null)
                 throw new IllegalArgumentException("Error: Patient medical record date cannot be null.");
 
-            if (record.getKey().getYear() < 2000)
+            if (((LocalDate) record[0]).getYear() < 2000)
                 throw new IllegalArgumentException("Error: Patient medical record date cannot be earlier than 2000.");
 
-            if (record.getKey().isAfter(LocalDate.now()))
+            if (((LocalDate) record[0]).isAfter(LocalDate.now()))
                 throw new IllegalArgumentException("Error: Patient medical record date cannot be later than " + LocalDate.now() + ".");
 
-            if (record.getValue() == null || record.getValue().isBlank())
+            if (record[1] == null || ((String) record[1]).isBlank())
                 throw new IllegalArgumentException("Error: Patient medical record cannot be null or blank.");
         }
 
