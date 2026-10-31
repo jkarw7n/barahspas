@@ -634,184 +634,162 @@ class GUI implements ActionListener {
         return new FlatSVGIcon(GUI.class.getResource("/img/" + name)).derive(25, 25);
     }
 
-    private void buildPatientsTableModel() throws SQLException {
+    private void buildPatientsTableModelWith(Patient patient) throws SQLException {
         patientsTableModel.setRowCount(0);
 
+        patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(dateFormatter), patient.getAge(), patient.getSex(), "Open in dialog"});
+    }
+
+    private void buildPatientsTableModel() throws SQLException {
         for (Patient patient : new QueryManager().getAllPatients()) {
-            patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(dateFormatter), patient.getAge(), patient.getSex(), "Open in dialog"});
+            buildPatientsTableModelWith(patient);
         }
+    }
+
+    private void buildAppointmentsTableModelWith(Appointment appointment) throws SQLException {
+        appointmentsTableModel.setRowCount(0);
+
+        appointmentsTableModel.addRow(new Object[] {appointment.getId(), appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate().format(dateFormatter), appointment.getStartTime().format(timeFormatter), appointment.getEndTime().format(timeFormatter), appointment.getStatus(), appointment.getDiagnosis(), appointment.getPrescription(), appointment.getNotes()});
     }
 
     private void buildAppointmentsTableModel() throws SQLException {
-        appointmentsTableModel.setRowCount(0);
-
         for (Appointment appointment : new QueryManager().getAllAppointments()) {
-            appointmentsTableModel.addRow(new Object[] {appointment.getId(), appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate().format(dateFormatter), appointment.getStartTime().format(timeFormatter), appointment.getEndTime().format(timeFormatter), appointment.getStatus(), appointment.getDiagnosis(), appointment.getPrescription(), appointment.getNotes()});
+            buildAppointmentsTableModelWith(appointment);
         }
     }
 
-    private void buildMedicalStaffTableModel() throws SQLException {
+    private void buildMedicalStaffTableModelWith(MedicalStaff medicalStaff) throws SQLException {
         medicalStaffTableModel.setRowCount(0);
 
+        medicalStaffTableModel.addRow(new Object[] {medicalStaff.getId(), medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff.getClass().getSimpleName(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : null, medicalStaff instanceof Nurse nurse ? nurse.getAssignedProgram() : null});
+    }
+
+    private void buildMedicalStaffTableModel() throws SQLException {
         for (MedicalStaff medicalStaff : new QueryManager().getAllMedicalStaff()) {
-            medicalStaffTableModel.addRow(new Object[] {medicalStaff.getId(), medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff.getClass().getSimpleName(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : null, medicalStaff instanceof Nurse nurse ? nurse.getAssignedProgram() : null});
+            buildMedicalStaffTableModelWith(medicalStaff);
         }
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent event) {
         String text = null;
 
-        if (e.getSource() instanceof JMenuItem menuItem)
+        if (event.getSource() instanceof JMenuItem menuItem)
             text = menuItem.getText();
-        else if (e.getSource() instanceof JButton button)
+        else if (event.getSource() instanceof JButton button)
             text = button.getToolTipText();
 
-        if (text.equals("Search Patients")) {
-            String[] components = {"Patient ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
-            List<Object> list = new Dialog(true, components).showDialog(text);
+        String[] components = switch (text) {
+            case "Search Patients" -> new String[] {"Patient ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
+            case "Register Patient", "Update Patient" -> new String[] {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
+            case "Search Appointments" -> new String[] {"Appointment ID", "Medical Staff ID*", "Patient ID*", "Appointment Date", "Start Time", "End Time", "Appointment Status"};
+            case "Schedule Appointment", "Update Appointment" -> new String[] {"Medical Staff ID*", "Patient ID*", "Appointment Date", "Start Time", "End Time"};
+            case "Complete Appointment" -> new String[] {"Appointment Diagnosis", "Appointment Prescription", "Appointment Notes"};
+            case "Search Medical Staff" -> new String[] {"Medical Staff ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Program"};
+            case "Register Medical Staff ID" -> new String[] {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Program"};
+            default -> null;
+        };
 
-            if (list == null) {
-                try {
+        Dialog dialog = new Dialog(text.startsWith("Search"), components);
+        List<Object> inputs = text.startsWith("Search") || text.startsWith("Register") ? dialog.showDialog(text) : null;
+        Map<String, Object> map = new HashMap<>();
+        int id = !text.startsWith("Search") && !text.startsWith("Register") ? Dialog.showIdDialog(text, (text.endsWith("Staff") ? "Medical " : "") + text.split(" ")[text.split(" ").length - 1] + " ID") : 0;
+
+        try {
+            QueryManager queryManager = new QueryManager();
+
+            if (text.equals("Search Patients")) {
+                if (inputs == null)
                     buildPatientsTableModel();
-                } catch (SQLException sqle) {
-                    Dialog.showErrorDialog(sqle.getMessage());
-                }
-            } else {
-                try {
-                    Map<String, Object> map = new HashMap<>();
-
+                else {
                     for (int i = 0; i < components.length; i++) {
-                        if (list.get(i) != null) {
-                            if (list.get(i) instanceof LocalDate date)
+                        if (inputs.get(i) != null) {
+                            if (inputs.get(i) instanceof LocalDate date)
                                 map.put(components[i].replaceAll(" ", ""), date.toString());
                             else
-                                map.put(components[i].replaceAll(" ", ""), list.get(i));
+                                map.put(components[i].replaceAll(" ", ""), inputs.get(i));
                         }
                     }
 
-                    patientsTableModel.setRowCount(0);
-
-                    new QueryManager().filterPatients(map).forEach((patient) -> {
-                        patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getAge(), patient.getSex(), "Open in dialog"});
+                    queryManager.filterPatients(map).forEach((patient) -> {
+                        try {
+                            buildPatientsTableModelWith(patient);
+                        } catch (SQLException | IllegalArgumentException | NullPointerException e) {
+                            Dialog.showErrorDialog(e.getMessage());
+                        }
                     });
-                } catch (SQLException sqle) {
-                    Dialog.showErrorDialog(sqle.getMessage());
                 }
-            }
-        } else if (text.equals("Register Patient")) {
-            String[] components = {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
-            List<Object> list = new Dialog(false, components).showDialog(text);
-
-            if (list != null) {
-                try {
-                    new QueryManager().registerPatient(new Patient((String) list.get(0), (String) list.get(1), (String) list.get(2), (String) list.get(3), (String) list.get(4), (String) list.get(5), (LocalDate) list.get(6), (String) list.get(7)));
+            } else if (text.equals("Register Patient")) {
+                if (inputs != null) {
+                    queryManager.registerPatient(new Patient((String) inputs.get(0), (String) inputs.get(1), (String) inputs.get(2), (String) inputs.get(3), (String) inputs.get(4), (String) inputs.get(5), (LocalDate) inputs.get(6), (String) inputs.get(7)));
 
                     buildPatientsTableModel();
-                } catch (SQLException | IllegalArgumentException sqliae) {
-                    Dialog.showErrorDialog(sqliae.getMessage());
                 }
-            }
-        } else if (text.equals("Update Patient")) {
-            int patientId = Dialog.showIdDialog(text, "Patient ID");
+            } else if (text.equals("Update Patient")) {
+                if (id > 0) {
+                    Patient patient = queryManager.getPatient(id);
 
-            if (patientId > 0) {
-                try {
-                    new QueryManager().getPatient(patientId);
+                    inputs = dialog.showDialog(text, new Object[] {patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getSex()});
 
-                    String[] components = {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Sex"};
-                    Patient patient = new QueryManager().getPatient(patientId);
-                    List<Object> list = new Dialog(false, components).showDialog(text, new Object[] {patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getSex()});
+                    if (inputs != null) {
+                        patient.setFirstName((String) inputs.get(0));
+                        patient.setMiddleName((String) inputs.get(1));
+                        patient.setLastName((String) inputs.get(2));
+                        patient.setNameSuffix((String) inputs.get(3));
+                        patient.setMobileNumber((String) inputs.get(4));
+                        patient.setEmailAddress((String) inputs.get(5));
+                        patient.setBirthDate((LocalDate) inputs.get(6));
+                        patient.setSex((String) inputs.get(7));
 
-                    if (list != null) {
-                        patient.setFirstName((String) list.get(0));
-                        patient.setMiddleName((String) list.get(1));
-                        patient.setLastName((String) list.get(2));
-                        patient.setNameSuffix((String) list.get(3));
-                        patient.setMobileNumber((String) list.get(4));
-                        patient.setEmailAddress((String) list.get(5));
-                        patient.setBirthDate((LocalDate) list.get(6));
-                        patient.setSex((String) list.get(7));
-
-                        new QueryManager().updatePatient(patient);
+                        queryManager.updatePatient(patient);
 
                         buildPatientsTableModel();
                     }
-                } catch (SQLException | IllegalArgumentException | NullPointerException sqlianpe) {
-                    Dialog.showErrorDialog(sqlianpe.getMessage());
                 }
-            }
-        } else if (text.equals("Delete Patient")) {
-            int patientId = Dialog.showIdDialog(text, "Patient ID");
-
-            if (patientId > 0) {
-                try {
-                    Patient patient = new QueryManager().getPatient(patientId);
+            } else if (text.equals("Delete Patient")) {
+                if (id > 0) {
+                    Patient patient = queryManager.getPatient(id);
 
                     int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete patient " + patient.getFullName() + "?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
                     if (result == JOptionPane.YES_OPTION) {
-                        new QueryManager().deletePatient(patient);
+                        queryManager.deletePatient(patient);
 
                         buildPatientsTableModel();
                     }
-                } catch (SQLException | IllegalArgumentException | NullPointerException sqlianpe) {
-                    Dialog.showErrorDialog(sqlianpe.getMessage());
                 }
-            }
-        } else if (text.equals("Search Appointments")) {
-            String[] components = {"Appointment ID", "Medical Staff ID*", "Patient ID*", "Appointment Date", "Start Time", "End Time", "Appointment Status"};
-            List<Object> list = new Dialog(true, components).showDialog(text);
-
-            if (list == null) {
-                try {
+            } else if (text.equals("Search Appointments")) {
+                if (inputs == null)
                     buildAppointmentsTableModel();
-                } catch (SQLException sqle) {
-                    Dialog.showErrorDialog(sqle.getMessage());
-                }
-            } else {
-                try {
-                    Map<String, Object> map = new HashMap<>();
-
+                else {
                     for (int i = 0; i < components.length; i++) {
-                        if (list.get(i) != null) {
-                            if (list.get(i) instanceof LocalDate date)
+                        if (inputs.get(i) != null) {
+                            if (inputs.get(i) instanceof LocalDate date)
                                 map.put(components[i].replaceAll(" ", ""), date.toString());
-                            else if (list.get(i) instanceof LocalTime time)
+                            else if (inputs.get(i) instanceof LocalTime time)
                                 map.put(components[i].replaceAll(" ", ""), time.toString());
                             else
-                                map.put(components[i].replaceAll("[\\s*]", ""), list.get(i));
+                                map.put(components[i].replaceAll("[\\s*]", ""), inputs.get(i));
                         }
                     }
 
-                    appointmentsTableModel.setRowCount(0);
-
-                    new QueryManager().filterAppointments(map).forEach((appointment) -> {
-                        appointmentsTableModel.addRow(new Object[] {appointment.getId(), appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate().format(dateFormatter), appointment.getStartTime().format(timeFormatter), appointment.getEndTime().format(timeFormatter), appointment.getStatus(), appointment.getDiagnosis(), appointment.getPrescription(), appointment.getNotes()});
+                    queryManager.filterAppointments(map).forEach((appointment) -> {
+                        try {
+                            buildAppointmentsTableModelWith(appointment);
+                        } catch (SQLException | IllegalArgumentException | NullPointerException e) {
+                            Dialog.showErrorDialog(e.getMessage());
+                        }
                     });
-                } catch (SQLException sqle) {
-                    Dialog.showErrorDialog(sqle.getMessage());
                 }
-            }
-        } else if (text.equals("Schedule Appointment")) {
-            String[] components = {"Medical Staff ID*", "Patient ID*", "Appointment Date", "Start Time", "End Time"};
-            List<Object> list = new Dialog(false, components).showDialog(text);
-
-            if (list != null) {
-                try {
-                    new QueryManager().scheduleAppointment(new Appointment(new QueryManager().getMedicalStaff((int) list.get(0)), new QueryManager().getPatient((int) list.get(1)), (LocalDate) list.get(2), (LocalTime) list.get(3), (LocalTime) list.get(4)));
+            } else if (text.equals("Schedule Appointment")) {
+                if (inputs != null) {
+                    queryManager.scheduleAppointment(new Appointment(queryManager.getMedicalStaff((int) inputs.get(0)), queryManager.getPatient((int) inputs.get(1)), (LocalDate) inputs.get(2), (LocalTime) inputs.get(3), (LocalTime) inputs.get(4)));
 
                     buildAppointmentsTableModel();
-                } catch (SQLException | IllegalArgumentException sqliae) {
-                    Dialog.showErrorDialog(sqliae.getMessage());
                 }
-            }
-        } else if (text.equals("Complete Appointment")) {
-            int appointmentId = Dialog.showIdDialog(text, "Appointment ID");
-
-            if (appointmentId > 0) {
-                try {
-                    Appointment appointment = new QueryManager().getAppointment(appointmentId);
+            } else if (text.equals("Complete Appointment")) {
+                if (id > 0) {
+                    Appointment appointment = queryManager.getAppointment(id);
 
                     if (appointment.getDate().isAfter(LocalDate.now())) {
                         Dialog.showErrorDialog("Appointment cannot be marked as completed before the input appointment date. Please update the appointment first.");
@@ -820,197 +798,140 @@ class GUI implements ActionListener {
                     }
 
                     if (appointment.getMedicalStaff().canDiagnoseAndPrescribe()) {
-                        String[] components = {"Appointment Diagnosis", "Appointment Prescription", "Appointment Notes"};
-                        List<Object> list = new Dialog(false, components).showDialog(text);
-
-                        if (list != null) {
-                            appointment.setDiagnosis((String) list.get(0));
-                            appointment.setPrescription((String) list.get(1));
-                            appointment.setNotes((String) list.get(2));
+                        if (inputs != null) {
+                            appointment.setDiagnosis((String) inputs.get(0));
+                            appointment.setPrescription((String) inputs.get(1));
+                            appointment.setNotes((String) inputs.get(2));
                         }
                     } else {
-                        List<Object> list = new Dialog(false, new String[] {"Appointment Notes"}).showDialog(text);
-
-                        if (list != null)
-                            appointment.setNotes((String) list.get(0));
+                        if (inputs != null)
+                            appointment.setNotes((String) new Dialog(false, new String[] {"Appointment Notes"}).showDialog(text).get(0));
                     }
 
-                    new QueryManager().completeAppointment(appointment);
+                    queryManager.completeAppointment(appointment);
 
                     buildAppointmentsTableModel();
-                    buildMedicalStaffTableModel();
-                } catch (SQLException | IllegalArgumentException | NullPointerException sqlianpe) {
-                    Dialog.showErrorDialog(sqlianpe.getMessage());
+                    buildPatientsTableModel();
                 }
-            }
-        } else if (text.equals("Update Appointment")) {
-            int appointmentId = Dialog.showIdDialog(text, "Appointment ID");
+            } else if (text.equals("Update Appointment")) {
+                if (id > 0) {
+                    Appointment appointment = queryManager.getAppointment(id);
 
-            if (appointmentId > 0) {
-                try {
-                    new QueryManager().getAppointment(appointmentId);
+                    inputs = dialog.showDialog(text, new Object[] {appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate(), appointment.getStartTime(), appointment.getEndTime()});
 
-                    String[] components = {"Medical Staff ID*", "Patient ID*", "Appointment Date", "Start Time", "End Time"};
-                    Appointment appointment = new QueryManager().getAppointment(appointmentId);
-                    List<Object> list = new Dialog(false, components).showDialog(text, new Object[] {appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate(), appointment.getStartTime(), appointment.getEndTime()});
+                    if (inputs != null) {
+                        appointment.setMedicalStaff(queryManager.getMedicalStaff((int) inputs.get(0)));
+                        appointment.setPatient(queryManager.getPatient((int) inputs.get(1)));
+                        appointment.setDate((LocalDate) inputs.get(2));
+                        appointment.setStartTime((LocalTime) inputs.get(3));
+                        appointment.setEndTime((LocalTime) inputs.get(4));
 
-                    if (list != null) {
-                        appointment.setMedicalStaff(new QueryManager().getMedicalStaff((int) list.get(0)));
-                        appointment.setPatient(new QueryManager().getPatient((int) list.get(1)));
-                        appointment.setDate((LocalDate) list.get(2));
-                        appointment.setStartTime((LocalTime) list.get(3));
-                        appointment.setEndTime((LocalTime) list.get(4));
-
-                        new QueryManager().updateAppointment(appointment);
+                        queryManager.updateAppointment(appointment);
 
                         buildAppointmentsTableModel();
                     }
-                } catch (SQLException | IllegalArgumentException | NullPointerException sqlianpe) {
-                    Dialog.showErrorDialog(sqlianpe.getMessage());
                 }
-            }
-        } else if (text.equals("Cancel Appointment")) {
-            int appointmentId = Dialog.showIdDialog(text, "Appointment ID");
-
-            if (appointmentId > 0) {
-                try {
-                    Appointment appointment = new QueryManager().getAppointment(appointmentId);
+            } else if (text.equals("Cancel Appointment")) {
+                if (id > 0) {
+                    Appointment appointment = queryManager.getAppointment(id);
 
                     if (appointment != null) {
-                        int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to cancel appointment " + appointmentId + "?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                        int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to cancel appointment " + id + " (" + appointment.getDate().format(dateFormatter) + ", " + appointment.getStartTime().format(timeFormatter) + " to " + appointment.getEndTime().format(timeFormatter) + ")?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
                         if (result == JOptionPane.YES_OPTION) {
-                            new QueryManager().cancelAppointment(appointment);
+                            queryManager.cancelAppointment(appointment);
 
                             buildAppointmentsTableModel();
                         }
                     }
-                } catch (SQLException | IllegalArgumentException | NullPointerException sqlianpe) {
-                    Dialog.showErrorDialog(sqlianpe.getMessage());
                 }
-            }
-        } else if (text.equals("Delete Appointment")) {
-            int appointmentId = Dialog.showIdDialog(text, "Appointment ID");
-
-            if (appointmentId > 0) {
-                try {
-                    Appointment appointment = new QueryManager().getAppointment(appointmentId);
+            } else if (text.equals("Delete Appointment")) {
+                if (id > 0) {
+                    Appointment appointment = queryManager.getAppointment(id);
 
                     if (appointment != null) {
-                        int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete appointment " + appointmentId + "?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                        int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete appointment " + id + " (" + appointment.getDate().format(dateFormatter) + ", " + appointment.getStartTime().format(timeFormatter) + " to " + appointment.getEndTime().format(timeFormatter) + ")?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
                         if (result == JOptionPane.YES_OPTION) {
-                            new QueryManager().deleteAppointment(appointment);
+                            queryManager.deleteAppointment(appointment);
 
                             buildAppointmentsTableModel();
                         }
                     }
-                } catch (SQLException | IllegalArgumentException | NullPointerException sqlianpe) {
-                    Dialog.showErrorDialog(sqlianpe.getMessage());
                 }
-            }
-        } else if (text.equals("Search Medical Staff")) {
-            String[] components = {"Medical Staff ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Program"};
-            List<Object> list = new Dialog(true, components).showDialog(text);
-
-            if (list == null) {
-                try {
+            } else if (text.equals("Search Medical Staff")) {
+                if (inputs == null)
                     buildMedicalStaffTableModel();
-                } catch (SQLException sqle) {
-                    Dialog.showErrorDialog(sqle.getMessage());
-                }
-            } else {
-                try {
-                    Map<String, Object> map = new HashMap<>();
-
+                else {
                     for (int i = 0; i < components.length; i++) {
-                        if (list.get(i) != null)
-                            map.put(components[i].replaceAll("[\\s*]", ""), list.get(i));
+                        if (inputs.get(i) != null)
+                            map.put(components[i].replaceAll("[\\s*]", ""), inputs.get(i));
                     }
 
-                    medicalStaffTableModel.setRowCount(0);
-
-                    new QueryManager().filterMedicalStaff(map).forEach((medicalStaff) -> {
-                        medicalStaffTableModel.addRow(new Object[] {medicalStaff.getId(), medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff.getClass().getSimpleName(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : null, medicalStaff instanceof Nurse nurse ? nurse.getAssignedProgram() : null});
+                    queryManager.filterMedicalStaff(map).forEach((medicalStaff) -> {
+                        try {
+                            buildMedicalStaffTableModelWith(medicalStaff);
+                        } catch (SQLException | IllegalArgumentException | NullPointerException e) {
+                            Dialog.showErrorDialog(e.getMessage());
+                        }
                     });
-                } catch (SQLException sqle) {
-                    Dialog.showErrorDialog(sqle.getMessage());
                 }
-            }
-        } else if (text.equals("Register Medical Staff")) {
-            String[] components = {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Program"};
-            List<Object> list = new Dialog(false, components).showDialog(text);
-
-            if (list != null) {
-                try {
-                    if (((String) list.get(9)).equals("Doctor")) {
-                        new QueryManager().registerMedicalStaff(new Doctor((String) list.get(0), (String) list.get(1), (String) list.get(2), (String) list.get(3), (String) list.get(4), (String) list.get(5), String.valueOf(list.get(6)), (String) list.get(7), (String) list.get(8), (String) list.get(10)));
-                    } else {
-                        new QueryManager().registerMedicalStaff(new Nurse((String) list.get(0), (String) list.get(1), (String) list.get(2), (String) list.get(3), (String) list.get(4), (String) list.get(5), String.valueOf(list.get(6)), (String) list.get(7), (String) list.get(8), (String) list.get(11)));
-                    }
+            } else if (text.equals("Register Medical Staff")) {
+                if (inputs != null) {
+                    if (((String) inputs.get(9)).equals("Doctor"))
+                        queryManager.registerMedicalStaff(new Doctor((String) inputs.get(0), (String) inputs.get(1), (String) inputs.get(2), (String) inputs.get(3), (String) inputs.get(4), (String) inputs.get(5), String.valueOf(inputs.get(6)), (String) inputs.get(7), (String) inputs.get(8), (String) inputs.get(10)));
+                    else
+                        queryManager.registerMedicalStaff(new Nurse((String) inputs.get(0), (String) inputs.get(1), (String) inputs.get(2), (String) inputs.get(3), (String) inputs.get(4), (String) inputs.get(5), String.valueOf(inputs.get(6)), (String) inputs.get(7), (String) inputs.get(8), (String) inputs.get(11)));
 
                     buildMedicalStaffTableModel();
-                } catch (SQLException | IllegalArgumentException sqliae) {
-                    Dialog.showErrorDialog(sqliae.getMessage());
                 }
-            }
-        } else if (text.equals("Update Medical Staff")) {
-            int medicalStaffId = Dialog.showIdDialog(text, "Medical Staff ID");
-
-            if (medicalStaffId > 0) {
-                try {
-                    MedicalStaff medicalStaff = new QueryManager().getMedicalStaff(medicalStaffId);
-                    String[] components = null;
+            } else if (text.equals("Update Medical Staff")) {
+                if (id > 0) {
+                    MedicalStaff medicalStaff = queryManager.getMedicalStaff(id);
 
                     if (medicalStaff instanceof Doctor)
                         components = new String[] {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Doctor Specialization"};
                     else
                         components = new String[] {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Assigned Program"};
 
-                    List<Object> list = new Dialog(false, components).showDialog(text, new Object[] {medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : ((Nurse) medicalStaff).getAssignedProgram()});
+                    inputs = dialog.showDialog(text, new Object[] {medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : ((Nurse) medicalStaff).getAssignedProgram()});
 
-                    if (list != null) {
-                        medicalStaff.setFirstName((String) list.get(0));
-                        medicalStaff.setMiddleName((String) list.get(1));
-                        medicalStaff.setLastName((String) list.get(2));
-                        medicalStaff.setNameSuffix((String) list.get(3));
-                        medicalStaff.setMobileNumber((String) list.get(4));
-                        medicalStaff.setEmailAddress((String) list.get(5));
-                        medicalStaff.setLicenseNumber(String.valueOf(list.get(6)));
-                        medicalStaff.setEmploymentType((String) list.get(7));
-                        medicalStaff.setShiftSchedule((String) list.get(8));
+                    if (inputs != null) {
+                        medicalStaff.setFirstName((String) inputs.get(0));
+                        medicalStaff.setMiddleName((String) inputs.get(1));
+                        medicalStaff.setLastName((String) inputs.get(2));
+                        medicalStaff.setNameSuffix((String) inputs.get(3));
+                        medicalStaff.setMobileNumber((String) inputs.get(4));
+                        medicalStaff.setEmailAddress((String) inputs.get(5));
+                        medicalStaff.setLicenseNumber(String.valueOf(inputs.get(6)));
+                        medicalStaff.setEmploymentType((String) inputs.get(7));
+                        medicalStaff.setShiftSchedule((String) inputs.get(8));
                         
                         if (medicalStaff instanceof Doctor doctor)
-                            doctor.setSpecialization((String) list.get(9));
+                            doctor.setSpecialization((String) inputs.get(9));
                         else if (medicalStaff instanceof Nurse nurse)
-                            nurse.setAssignedProgram((String) list.get(9));
+                            nurse.setAssignedProgram((String) inputs.get(9));
 
-                        new QueryManager().updateMedicalStaff(medicalStaff);
+                        queryManager.updateMedicalStaff(medicalStaff);
 
                         buildMedicalStaffTableModel();
                     }
-                } catch (SQLException | IllegalArgumentException | NullPointerException sqlianpe) {
-                    Dialog.showErrorDialog(sqlianpe.getMessage());
                 }
-            }
-        } else if (text.equals("Delete Medical Staff")) {
-            int medicalStaffId = Dialog.showIdDialog(text, "Medical Staff ID");
-
-            if (medicalStaffId > 0) {
-                try {
-                    MedicalStaff medicalStaff = new QueryManager().getMedicalStaff(medicalStaffId);
+            } else if (text.equals("Delete Medical Staff")) {
+                if (id > 0) {
+                    MedicalStaff medicalStaff = queryManager.getMedicalStaff(id);
 
                     int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete medical staff " + medicalStaff.getFullName() + "?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
                     if (result == JOptionPane.YES_OPTION) {
-                        new QueryManager().deleteMedicalStaff(medicalStaff);
+                        queryManager.deleteMedicalStaff(medicalStaff);
 
                         buildMedicalStaffTableModel();
                     }
-                } catch (SQLException | IllegalArgumentException | NullPointerException sqlianpe) {
-                    Dialog.showErrorDialog(sqlianpe.getMessage());
                 }
             }
+        } catch (SQLException | IllegalArgumentException | NullPointerException e) {
+            Dialog.showErrorDialog(e.getMessage());
         }
     }
 }
