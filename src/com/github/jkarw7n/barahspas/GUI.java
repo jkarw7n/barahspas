@@ -2,6 +2,7 @@ package com.github.jkarw7n.barahspas;
 
 import com.formdev.flatlaf.*;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMTGitHubDarkIJTheme;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.SQLException;
@@ -21,7 +22,10 @@ class GUI implements ActionListener {
     private static DateTimeFormatter dateFormatter, timeFormatter;
 
     public GUI() throws SQLException, UnsupportedLookAndFeelException {
-        UIManager.setLookAndFeel(new FlatDarkLaf());
+        UIManager.setLookAndFeel(new FlatMTGitHubDarkIJTheme());
+
+        // for alternating table row colors
+        UIManager.put("Table.alternateRowColor", UIManager.getColor("Panel.background").brighter());
 
         frame = new JFrame("BaraHSPAS");
         
@@ -32,11 +36,28 @@ class GUI implements ActionListener {
         dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy");
         timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
 
-        addPanels();
-        showFrame();
+        if (logIn()) {
+            addPanels();
+            showFrame();
+        }
     }
 
-    // Creates the menu bar before initializing the main panel and adding it to the frame
+    // verifies admin log-in credentials first before letting the user in the actual program
+    // USERNAME: admin
+    // PASSWORD: barahspas123
+    private boolean logIn() {
+        List<Object> credentials = new Dialog(false, new String[] {"Username", "Password"}).showDialog("Please log in with your credentials");
+
+        if (credentials == null || !((String) credentials.get(0)).equals("admin") || !((String) credentials.get(1)).equals("barahspas123")) {
+            Dialog.showErrorDialog("Log in unsuccessful. Please try again.");
+
+            return false;
+        }
+
+        return true;
+    }
+
+    // creates the menu bar before initializing the main panel and adding it to the frame
     private void addPanels() throws SQLException {
         JMenuBar menuBar = new JMenuBar();
         JMenu aboutMenu = new JMenu("About"),
@@ -274,7 +295,11 @@ class GUI implements ActionListener {
 
         editor.setEditable(false);
 
+        table.setCellSelectionEnabled(true);
+        table.setRowSelectionAllowed(false);
+        table.setColumnSelectionAllowed(false);
         table.setDefaultEditor(Object.class, new DefaultCellEditor(editor));
+        
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -449,6 +474,9 @@ class GUI implements ActionListener {
 
         editor.setEditable(false);
 
+        table.setCellSelectionEnabled(true);
+        table.setRowSelectionAllowed(false);
+        table.setColumnSelectionAllowed(false);
         table.setDefaultEditor(Object.class, new DefaultCellEditor(editor));
 
         JScrollPane scrollPane = new JScrollPane(table);
@@ -610,6 +638,9 @@ class GUI implements ActionListener {
 
         editor.setEditable(false);
 
+        table.setCellSelectionEnabled(true);
+        table.setRowSelectionAllowed(false);
+        table.setColumnSelectionAllowed(false);
         table.setDefaultEditor(Object.class, new DefaultCellEditor(editor));
 
         JScrollPane scrollPane = new JScrollPane(table);
@@ -635,41 +666,42 @@ class GUI implements ActionListener {
     }
 
     private void buildPatientsTableModelWith(Patient patient) throws SQLException {
-        patientsTableModel.setRowCount(0);
-
         patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(dateFormatter), patient.getAge(), patient.getSex(), "Open in dialog"});
     }
 
     private void buildPatientsTableModel() throws SQLException {
+        patientsTableModel.setRowCount(0);
+
         for (Patient patient : new QueryManager().getAllPatients()) {
             buildPatientsTableModelWith(patient);
         }
     }
 
     private void buildAppointmentsTableModelWith(Appointment appointment) throws SQLException {
-        appointmentsTableModel.setRowCount(0);
-
         appointmentsTableModel.addRow(new Object[] {appointment.getId(), appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate().format(dateFormatter), appointment.getStartTime().format(timeFormatter), appointment.getEndTime().format(timeFormatter), appointment.getStatus(), appointment.getDiagnosis(), appointment.getPrescription(), appointment.getNotes()});
     }
 
     private void buildAppointmentsTableModel() throws SQLException {
+        appointmentsTableModel.setRowCount(0);
+
         for (Appointment appointment : new QueryManager().getAllAppointments()) {
             buildAppointmentsTableModelWith(appointment);
         }
     }
 
     private void buildMedicalStaffTableModelWith(MedicalStaff medicalStaff) throws SQLException {
-        medicalStaffTableModel.setRowCount(0);
-
         medicalStaffTableModel.addRow(new Object[] {medicalStaff.getId(), medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff.getClass().getSimpleName(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : null, medicalStaff instanceof Nurse nurse ? nurse.getAssignedProgram() : null});
     }
 
     private void buildMedicalStaffTableModel() throws SQLException {
+        medicalStaffTableModel.setRowCount(0);
+
         for (MedicalStaff medicalStaff : new QueryManager().getAllMedicalStaff()) {
             buildMedicalStaffTableModelWith(medicalStaff);
         }
     }
 
+    // what happens whenever a button is clicked, etc.
     @Override
     public void actionPerformed(ActionEvent event) {
         String text = null;
@@ -710,6 +742,8 @@ class GUI implements ActionListener {
                                 map.put(components[i].replaceAll(" ", ""), inputs.get(i));
                         }
                     }
+
+                    patientsTableModel.setRowCount(0);
 
                     queryManager.filterPatients(map).forEach((patient) -> {
                         try {
@@ -772,6 +806,8 @@ class GUI implements ActionListener {
                                 map.put(components[i].replaceAll("[\\s*]", ""), inputs.get(i));
                         }
                     }
+
+                    appointmentsTableModel.setRowCount(0);
 
                     queryManager.filterAppointments(map).forEach((appointment) -> {
                         try {
@@ -867,6 +903,8 @@ class GUI implements ActionListener {
                         if (inputs.get(i) != null)
                             map.put(components[i].replaceAll("[\\s*]", ""), inputs.get(i));
                     }
+
+                    medicalStaffTableModel.setRowCount(0);
 
                     queryManager.filterMedicalStaff(map).forEach((medicalStaff) -> {
                         try {

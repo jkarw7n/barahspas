@@ -11,6 +11,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JSpinner;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -26,6 +27,10 @@ class Dialog {
 
         dialogPanel = new JPanel(new GridLayout(0, 2, 5, 5));
         nonNullableIndices = new ArrayList<>();
+
+        // Log-in dialog labels
+        JLabel usernameLabel = requiredLabel("Username"),
+            passwordLabel = requiredLabel("Password");
 
         // General dialog labels
         JLabel firstNameLabel = requiredLabel("First Name"),
@@ -70,7 +75,8 @@ class Dialog {
             endTimePanel = new JPanel(gridLayout);
 
         // Text fields
-        JTextField firstNameField = new JTextField(),
+        JTextField usernameField = new JTextField(),
+            firstNameField = new JTextField(),
             middleNameField = new JTextField(),
             lastNameField = new JTextField(),
             mobileNumberField = new JTextField(),
@@ -80,6 +86,9 @@ class Dialog {
             appointmentDiagnosisField = new JTextField(),
             appointmentPrescriptionField = new JTextField(),
             appointmentNotesField = new JTextField();
+        
+        // Log-in password field
+        JPasswordField passwordField = new JPasswordField();
 
         // Combo boxes
         JComboBox<String> nameSuffixBox = new JComboBox<>(new String[] {"None", "Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"}),
@@ -140,6 +149,8 @@ class Dialog {
         endTimePanel.add(endTimeMeridianBox);
 
         // Add placeholders to text fields
+        usernameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter username here");
+        passwordField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter password here");
         firstNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter first name here");
         middleNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter middle name here");
         lastNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter last name here");
@@ -222,8 +233,8 @@ class Dialog {
         });
 
         if (forSearching) {
-            for (JLabel spinner : new JLabel[] {patientIdLabel, birthDateLabel, appointmentIdLabel, appointmentDateLabel, appointmentMedicalStaffIdLabel, appointmentPatientIdLabel, startTimeLabel, endTimeLabel, medicalStaffIdLabel, licenseNumberLabel}) {
-                spinner.setToolTipText("Leave as is for a null value");
+            for (JLabel label : new JLabel[] {patientIdLabel, birthDateLabel, appointmentIdLabel, appointmentDateLabel, appointmentMedicalStaffIdLabel, appointmentPatientIdLabel, startTimeLabel, endTimeLabel, medicalStaffIdLabel, licenseNumberLabel}) {
+                label.setToolTipText("Leave as is for a null value");
             }
         }
 
@@ -232,6 +243,16 @@ class Dialog {
             int nonNullableIndex = (i * 2) + 1;
 
             switch (dialogComponents[i]) {
+                case "Username":
+                    dialogPanel.add(usernameLabel);
+                    dialogPanel.add(usernameField);
+                    nonNullableIndices.add(nonNullableIndex);
+                    break;
+                case "Password":
+                    dialogPanel.add(passwordLabel);
+                    dialogPanel.add(passwordField);
+                    nonNullableIndices.add(nonNullableIndex);
+                    break;
                 case "First Name":
                     dialogPanel.add(firstNameLabel);
                     dialogPanel.add(firstNameField);
@@ -481,7 +502,12 @@ class Dialog {
         for (int i = 1; i < dialogPanel.getComponentCount(); i += 2) {
             Component component = dialogPanel.getComponent(i);
 
-            if (component instanceof JTextField textField) {
+            if (component instanceof JPasswordField passwordField) {
+                if (passwordField.getPassword() == null || passwordField.getPassword().length == 0)
+                    showErrorDialog("Required password field's value cannot be null or blank.");
+                else
+                    inputValues.add(String.valueOf(passwordField.getPassword()));
+            } else if (component instanceof JTextField textField) {
                 if (textField.getText() == null || textField.getText().isBlank()) {
                     if (nonNullableIndices.contains(i) && textField.isEnabled() && !forSearching)
                         showErrorDialog("Required text field's value cannot be null or blank.");
