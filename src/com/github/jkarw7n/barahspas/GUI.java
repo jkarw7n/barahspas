@@ -234,10 +234,11 @@ class GUI implements ActionListener {
         mobileNumberPanel.add(mobileNumberLabel);
         mobileNumberPanel.add(mobileNumberField);
 
-        JButton quickSearchButton = new JButton("Quick Search");
+        JButton quickSearchButton = new JButton("Quick Search"),
+            resetSearchButton = new JButton("Reset Search");
 
         quickSearchButton.setMnemonic('q');
-        quickSearchButton.addActionListener(e -> {
+        quickSearchButton.addActionListener(event -> {
             Map<String, Object> map = new HashMap<>();
 
             if ((int) patientIdSpinner.getValue() > 0)
@@ -257,23 +258,48 @@ class GUI implements ActionListener {
                     patientsTableModel.setRowCount(0);
 
                     new QueryManager().filterPatients(map).forEach((patient) -> {
-                        patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getAge(), patient.getSex(), "Open in dialog"});
+                        try {
+                            buildPatientsTableModelWith(patient);
+                        } catch (SQLException e) {
+                            Dialog.showErrorDialog(e.getMessage());
+                        }
                     });
                 } else
                     buildPatientsTableModel();
-            } catch (SQLException sqle) {
-                Dialog.showErrorDialog(sqle.getMessage());
+            } catch (SQLException e) {
+                Dialog.showErrorDialog(e.getMessage());
+            }
+        });
+
+        resetSearchButton.setMnemonic('r');
+        resetSearchButton.addActionListener(event -> {
+            patientIdSpinner.setValue(0);
+            
+            for (JTextField textField : new JTextField[] {firstNameField, lastNameField, mobileNumberField}) {
+                textField.setText(null);
+            }
+
+            try {
+                buildPatientsTableModel();
+            } catch (SQLException e) {
+                Dialog.showErrorDialog(e.getMessage());
             }
         });
 
         quickSearchPanel.add(quickSearchButton);
+        quickSearchPanel.add(resetSearchButton);
 
         for (JComponent component : new JComponent[] {patientIdLabel, patientIdSpinner, firstNameLabel, firstNameField, lastNameLabel, lastNameField, mobileNumberLabel, mobileNumberField}) {
             component.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+            component.setToolTipText("Leave as is for a null value");
         }
 
         for (JButton button : new JButton[] {searchButton, registerButton, updateButton, deleteButton}) {
             button.addActionListener(this);
+        }
+
+        for (JButton button : new JButton[] {quickSearchButton, resetSearchButton}) {
+            button.setAlignmentX(JButton.CENTER_ALIGNMENT);
         }
 
         toolbar.add(searchButton);
@@ -299,7 +325,6 @@ class GUI implements ActionListener {
         table.setRowSelectionAllowed(false);
         table.setColumnSelectionAllowed(false);
         table.setDefaultEditor(Object.class, new DefaultCellEditor(editor));
-        
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -406,10 +431,11 @@ class GUI implements ActionListener {
         appointmentDatePanel.add(appointmentDateLabel);
         appointmentDatePanel.add(appointmentDateNestedPanel);
 
-        JButton quickSearchButton = new JButton("Quick Search");
+        JButton quickSearchButton = new JButton("Quick Search"),
+            resetSearchButton = new JButton("Reset Search");
 
         quickSearchButton.setMnemonic('q');
-        quickSearchButton.addActionListener(e -> {
+        quickSearchButton.addActionListener(event -> {
             Map<String, Object> map = new HashMap<>();
 
             if ((int) appointmentIdSpinner.getValue() > 0)
@@ -429,28 +455,50 @@ class GUI implements ActionListener {
                     appointmentsTableModel.setRowCount(0);
 
                     new QueryManager().filterAppointments(map).forEach((appointment) -> {
-                        appointmentsTableModel.addRow(new Object[] {appointment.getId(), appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate().format(dateFormatter), appointment.getStartTime().format(timeFormatter), appointment.getEndTime().format(timeFormatter), appointment.getStatus(), appointment.getDiagnosis(), appointment.getPrescription(), appointment.getNotes()});
+                        try {
+                            buildAppointmentsTableModelWith(appointment);
+                        } catch (SQLException e) {
+                            Dialog.showErrorDialog(e.getMessage());
+                        }
                     });
                 } else
                     buildAppointmentsTableModel();
-            } catch (SQLException sqle) {
-                Dialog.showErrorDialog(sqle.getMessage());
+            } catch (SQLException e) {
+                Dialog.showErrorDialog(e.getMessage());
             }
         });
 
+        resetSearchButton.setMnemonic('r');
+        resetSearchButton.addActionListener(event -> {
+            for (JSpinner spinner : new JSpinner[] {appointmentIdSpinner, medicalStaffIdSpinner, patientIdSpinner}) {
+                spinner.setValue(0);
+            }
+
+            monthSpinner.setValue(1);
+            daySpinner.setValue(1);
+            yearSpinner.setValue(1900);
+        });
+
         quickSearchPanel.add(quickSearchButton);
+        quickSearchPanel.add(resetSearchButton);
 
         for (JComponent component : new JComponent[] {appointmentIdLabel, appointmentIdSpinner, medicalStaffIdLabel, medicalStaffIdSpinner, patientIdLabel, patientIdSpinner, appointmentDateLabel, appointmentDateNestedPanel}) {
             component.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+            component.setToolTipText(component instanceof JPanel ? null : "Leave as is for a null value");
         }
 
         for (JSpinner spinner : new JSpinner[] {appointmentIdSpinner, medicalStaffIdSpinner, patientIdSpinner, monthSpinner, daySpinner, yearSpinner}) {
             spinner.setEditor(new JSpinner.NumberEditor(spinner, "#"));
             spinner.setMaximumSize(spinner.getPreferredSize());
+            spinner.setToolTipText("Leave as is for a null value");
         }
 
         for (JButton button : new JButton[] {searchButton, scheduleButton, completeButton, updateButton, cancelButton, deleteButton}) {
             button.addActionListener(this);
+        }
+
+        for (JButton button : new JButton[] {quickSearchButton, resetSearchButton}) {
+            button.setAlignmentX(JButton.CENTER_ALIGNMENT);
         }
 
         toolbar.add(searchButton);
@@ -568,10 +616,11 @@ class GUI implements ActionListener {
         employmentTypePanel.add(employmentTypeLabel);
         employmentTypePanel.add(employmentTypeBox);
 
-        JButton quickSearchButton = new JButton("Quick Search");
+        JButton quickSearchButton = new JButton("Quick Search"),
+            resetSearchButton = new JButton("Reset Search");
 
         quickSearchButton.setMnemonic('q');
-        quickSearchButton.addActionListener(e -> {
+        quickSearchButton.addActionListener(event -> {
             Map<String, Object> map = new HashMap<>();
 
             if ((int) medicalStaffIdSpinner.getValue() > 0)
@@ -597,24 +646,44 @@ class GUI implements ActionListener {
                     medicalStaffTableModel.setRowCount(0);
 
                     new QueryManager().filterMedicalStaff(map).forEach((medicalStaff) -> {
-                        medicalStaffTableModel.addRow(new Object[] {medicalStaff.getId(), medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff.getClass().getSimpleName(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : null, medicalStaff instanceof Nurse nurse ? nurse.getAssignedProgram() : null});
+                        try {
+                            buildMedicalStaffTableModelWith(medicalStaff);
+                        } catch (SQLException e) {
+                            Dialog.showErrorDialog(e.getMessage());
+                        }
                     });
                 } else
                     buildMedicalStaffTableModel();
-            } catch (SQLException sqle) {
-                Dialog.showErrorDialog(sqle.getMessage());
+            } catch (SQLException e) {
+                Dialog.showErrorDialog(e.getMessage());
             }
         });
 
+        resetSearchButton.setMnemonic('r');
+        resetSearchButton.addActionListener(e -> {
+            medicalStaffIdSpinner.setValue(0);
+            firstNameField.setText(null);
+            lastNameField.setText(null);
+            medicalStaffTypeBox.setSelectedItem("None");
+            licenseNumberSpinner.setValue(0);
+            employmentTypeBox.setSelectedItem("None");
+        });
+
         quickSearchPanel.add(quickSearchButton);
+        quickSearchPanel.add(resetSearchButton);
 
         for (JComponent component : new JComponent[] {medicalStaffIdLabel, medicalStaffIdSpinner, firstNameLabel, firstNameField, lastNameLabel, lastNameField, medicalStaffTypeLabel, medicalStaffTypeBox, licenseNumberLabel, licenseNumberSpinner, employmentTypeLabel, employmentTypeBox}) {
             component.setMaximumSize(component.getPreferredSize());
             component.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+            component.setToolTipText("Leave as is for a null value");
         }
 
         for (JButton button : new JButton[] {searchButton, registerButton, updateButton, deleteButton}) {
             button.addActionListener(this);
+        }
+
+        for (JButton button : new JButton[] {quickSearchButton, resetSearchButton}) {
+            button.setAlignmentX(JButton.CENTER_ALIGNMENT);
         }
 
         toolbar.add(searchButton);
