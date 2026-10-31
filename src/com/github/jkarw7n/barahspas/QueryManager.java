@@ -366,7 +366,9 @@ class QueryManager {
             }
         }
 
-        medicalRecords.sort(Comparator.comparing(medicalRecord -> (LocalDate) medicalRecord[0]));
+        if (medicalRecords != null && medicalRecords.size() > 0)
+            medicalRecords.sort(Comparator.comparing(medicalRecord -> (LocalDate) medicalRecord[0]));
+        
         patient.setMedicalRecords(medicalRecords);
         return patient;
     }

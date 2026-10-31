@@ -18,7 +18,8 @@ import javax.swing.table.DefaultTableModel;
 class GUI implements ActionListener {
     private JFrame frame;
     private JPanel mainPanel;
-    private DefaultTableModel patientsTableModel, appointmentsTableModel, medicalStaffTableModel;
+    private JScrollPane patientsPane, appointmentsPane, medicalStaffPane;
+    private DefaultTableModel patientsModel, appointmentsModel, medicalStaffModel;
     private static DateTimeFormatter dateFormatter, timeFormatter;
 
     public GUI() throws SQLException, UnsupportedLookAndFeelException {
@@ -29,9 +30,9 @@ class GUI implements ActionListener {
 
         frame = new JFrame("BaraHSPAS");
         
-        patientsTableModel = new DefaultTableModel(new Object[][] {}, new String[] {"Patient ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Age", "Patient Sex", "Medical Records"});
-        appointmentsTableModel = new DefaultTableModel(new Object[][] {}, new String[] {"Appointment ID", "Medical Staff ID", "Patient ID", "Appointment Date", "Start Time", "End Time", "Appointment Status", "Appointment Diagnosis", "Appointment Prescription", "Appointment Notes"});
-        medicalStaffTableModel = new DefaultTableModel(new Object[][] {}, new String[] {"Medical Staff ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Programs"});
+        patientsModel = new DefaultTableModel(new Object[][] {}, new String[] {"Patient ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "Birth Date", "Patient Age", "Patient Sex", "Medical Records"});
+        appointmentsModel = new DefaultTableModel(new Object[][] {}, new String[] {"Appointment ID", "Medical Staff ID", "Patient ID", "Appointment Date", "Start Time", "End Time", "Appointment Status", "Appointment Diagnosis", "Appointment Prescription", "Appointment Notes"});
+        medicalStaffModel = new DefaultTableModel(new Object[][] {}, new String[] {"Medical Staff ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Programs"});
 
         dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy");
         timeFormatter = DateTimeFormatter.ofPattern("h:mm a");
@@ -255,17 +256,17 @@ class GUI implements ActionListener {
 
             try {
                 if (map.size() > 0) {
-                    patientsTableModel.setRowCount(0);
+                    patientsModel.setRowCount(0);
 
                     new QueryManager().filterPatients(map).forEach((patient) -> {
                         try {
-                            buildPatientsTableModelWith(patient);
+                            buildPatientsModelWith(patient);
                         } catch (SQLException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
                     });
                 } else
-                    buildPatientsTableModel();
+                    buildPatientsModel();
             } catch (SQLException e) {
                 Dialog.showErrorDialog(e.getMessage());
             }
@@ -280,7 +281,7 @@ class GUI implements ActionListener {
             }
 
             try {
-                buildPatientsTableModel();
+                buildPatientsModel();
             } catch (SQLException e) {
                 Dialog.showErrorDialog(e.getMessage());
             }
@@ -313,10 +314,7 @@ class GUI implements ActionListener {
         toolbar.add(mobileNumberPanel);
         toolbar.add(quickSearchPanel);
 
-        JTable table = new JTable(patientsTableModel);
-
-        buildPatientsTableModel();
-
+        JTable table = new JTable(patientsModel);
         JTextField editor = new JTextField();
 
         editor.setEditable(false);
@@ -355,12 +353,16 @@ class GUI implements ActionListener {
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(table);
+        patientsPane = new JScrollPane(table);
 
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        buildPatientsModel();
+
+        patientsPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        updateScrollPaneToolTipText();
 
         patientsPanel.add(toolbar, BorderLayout.NORTH);
-        patientsPanel.add(scrollPane, BorderLayout.CENTER);
+        patientsPanel.add(patientsPane, BorderLayout.CENTER);
 
         mainPanel.add(patientsPanel, "Patients");
     }
@@ -452,17 +454,17 @@ class GUI implements ActionListener {
 
             try {
                 if (map.size() > 0) {
-                    appointmentsTableModel.setRowCount(0);
+                    appointmentsModel.setRowCount(0);
 
                     new QueryManager().filterAppointments(map).forEach((appointment) -> {
                         try {
-                            buildAppointmentsTableModelWith(appointment);
+                            buildAppointmentsModelWith(appointment);
                         } catch (SQLException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
                     });
                 } else
-                    buildAppointmentsTableModel();
+                    buildAppointmentsModel();
             } catch (SQLException e) {
                 Dialog.showErrorDialog(e.getMessage());
             }
@@ -477,6 +479,12 @@ class GUI implements ActionListener {
             monthSpinner.setValue(1);
             daySpinner.setValue(1);
             yearSpinner.setValue(1900);
+
+            try {
+                buildAppointmentsModel();
+            } catch (SQLException e) {
+                Dialog.showErrorDialog(e.getMessage());
+            }
         });
 
         quickSearchPanel.add(quickSearchButton);
@@ -514,10 +522,7 @@ class GUI implements ActionListener {
         toolbar.add(appointmentDatePanel);
         toolbar.add(quickSearchPanel);
 
-        JTable table = new JTable(appointmentsTableModel);
-
-        buildAppointmentsTableModel();
-
+        JTable table = new JTable(appointmentsModel);
         JTextField editor = new JTextField();
 
         editor.setEditable(false);
@@ -527,12 +532,16 @@ class GUI implements ActionListener {
         table.setColumnSelectionAllowed(false);
         table.setDefaultEditor(Object.class, new DefaultCellEditor(editor));
 
-        JScrollPane scrollPane = new JScrollPane(table);
+        appointmentsPane = new JScrollPane(table);
 
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        buildAppointmentsModel();
+
+        appointmentsPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        updateScrollPaneToolTipText();
 
         appointmentsPanel.add(toolbar, BorderLayout.NORTH);
-        appointmentsPanel.add(scrollPane, BorderLayout.CENTER);
+        appointmentsPanel.add(appointmentsPane, BorderLayout.CENTER);
 
         mainPanel.add(appointmentsPanel, "Appointments");
     }
@@ -643,30 +652,36 @@ class GUI implements ActionListener {
 
             try {
                 if (map.size() > 0) {
-                    medicalStaffTableModel.setRowCount(0);
+                    medicalStaffModel.setRowCount(0);
 
                     new QueryManager().filterMedicalStaff(map).forEach((medicalStaff) -> {
                         try {
-                            buildMedicalStaffTableModelWith(medicalStaff);
+                            buildMedicalStaffModelWith(medicalStaff);
                         } catch (SQLException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
                     });
                 } else
-                    buildMedicalStaffTableModel();
+                    buildMedicalStaffModel();
             } catch (SQLException e) {
                 Dialog.showErrorDialog(e.getMessage());
             }
         });
 
         resetSearchButton.setMnemonic('r');
-        resetSearchButton.addActionListener(e -> {
+        resetSearchButton.addActionListener(event -> {
             medicalStaffIdSpinner.setValue(0);
             firstNameField.setText(null);
             lastNameField.setText(null);
             medicalStaffTypeBox.setSelectedItem("None");
             licenseNumberSpinner.setValue(0);
             employmentTypeBox.setSelectedItem("None");
+
+            try {
+                buildMedicalStaffModel();
+            } catch (SQLException e) {
+                Dialog.showErrorDialog(e.getMessage());
+            }
         });
 
         quickSearchPanel.add(quickSearchButton);
@@ -699,10 +714,7 @@ class GUI implements ActionListener {
         toolbar.add(employmentTypePanel);
         toolbar.add(quickSearchPanel);
 
-        JTable table = new JTable(medicalStaffTableModel);
-
-        buildMedicalStaffTableModel();
-
+        JTable table = new JTable(medicalStaffModel);
         JTextField editor = new JTextField();
 
         editor.setEditable(false);
@@ -712,12 +724,16 @@ class GUI implements ActionListener {
         table.setColumnSelectionAllowed(false);
         table.setDefaultEditor(Object.class, new DefaultCellEditor(editor));
 
-        JScrollPane scrollPane = new JScrollPane(table);
+        medicalStaffPane = new JScrollPane(table);
 
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        buildMedicalStaffModel();
+
+        medicalStaffPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        updateScrollPaneToolTipText();
 
         medicalStaffPanel.add(toolbar, BorderLayout.NORTH);
-        medicalStaffPanel.add(scrollPane, BorderLayout.CENTER);
+        medicalStaffPanel.add(medicalStaffPane, BorderLayout.CENTER);
 
         mainPanel.add(medicalStaffPanel, "Medical Staff");
     }
@@ -734,40 +750,63 @@ class GUI implements ActionListener {
         return new FlatSVGIcon(GUI.class.getResource("/img/" + name)).derive(25, 25);
     }
 
-    private void buildPatientsTableModelWith(Patient patient) throws SQLException {
-        patientsTableModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(dateFormatter), patient.getAge(), patient.getSex(), "Open in dialog"});
+    private void buildPatientsModelWith(Patient patient) throws SQLException {
+        patientsModel.addRow(new Object[] {patient.getId(), patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate().format(dateFormatter), patient.getAge(), patient.getSex(), "Open in dialog"});
+
+        updateScrollPaneToolTipText();
     }
 
-    private void buildPatientsTableModel() throws SQLException {
-        patientsTableModel.setRowCount(0);
+    private void buildPatientsModel() throws SQLException {
+        patientsModel.setRowCount(0);
 
         for (Patient patient : new QueryManager().getAllPatients()) {
-            buildPatientsTableModelWith(patient);
+            buildPatientsModelWith(patient);
         }
+
+        updateScrollPaneToolTipText();
     }
 
-    private void buildAppointmentsTableModelWith(Appointment appointment) throws SQLException {
-        appointmentsTableModel.addRow(new Object[] {appointment.getId(), appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate().format(dateFormatter), appointment.getStartTime().format(timeFormatter), appointment.getEndTime().format(timeFormatter), appointment.getStatus(), appointment.getDiagnosis(), appointment.getPrescription(), appointment.getNotes()});
+    private void buildAppointmentsModelWith(Appointment appointment) throws SQLException {
+        appointmentsModel.addRow(new Object[] {appointment.getId(), appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate().format(dateFormatter), appointment.getStartTime().format(timeFormatter), appointment.getEndTime().format(timeFormatter), appointment.getStatus(), appointment.getDiagnosis(), appointment.getPrescription(), appointment.getNotes()});
+
+        updateScrollPaneToolTipText();
     }
 
-    private void buildAppointmentsTableModel() throws SQLException {
-        appointmentsTableModel.setRowCount(0);
+    private void buildAppointmentsModel() throws SQLException {
+        appointmentsModel.setRowCount(0);
 
         for (Appointment appointment : new QueryManager().getAllAppointments()) {
-            buildAppointmentsTableModelWith(appointment);
+            buildAppointmentsModelWith(appointment);
         }
+
+        updateScrollPaneToolTipText();
     }
 
-    private void buildMedicalStaffTableModelWith(MedicalStaff medicalStaff) throws SQLException {
-        medicalStaffTableModel.addRow(new Object[] {medicalStaff.getId(), medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff.getClass().getSimpleName(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : null, medicalStaff instanceof Nurse nurse ? nurse.getAssignedProgram() : null});
+    private void buildMedicalStaffModelWith(MedicalStaff medicalStaff) throws SQLException {
+        medicalStaffModel.addRow(new Object[] {medicalStaff.getId(), medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff.getClass().getSimpleName(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : null, medicalStaff instanceof Nurse nurse ? nurse.getAssignedProgram() : null});
+
+        updateScrollPaneToolTipText();
     }
 
-    private void buildMedicalStaffTableModel() throws SQLException {
-        medicalStaffTableModel.setRowCount(0);
+    private void buildMedicalStaffModel() throws SQLException {
+        medicalStaffModel.setRowCount(0);
 
         for (MedicalStaff medicalStaff : new QueryManager().getAllMedicalStaff()) {
-            buildMedicalStaffTableModelWith(medicalStaff);
+            buildMedicalStaffModelWith(medicalStaff);
         }
+
+        updateScrollPaneToolTipText();
+    }
+
+    private void updateScrollPaneToolTipText() {
+        if (patientsPane != null)
+            patientsPane.setToolTipText(patientsModel.getRowCount() == 0 ? "<html>No existing patient records could be found.<br>Please register a patient to get started.</html>" : null);
+
+        if (appointmentsPane != null)
+            appointmentsPane.setToolTipText(appointmentsModel.getRowCount() == 0 ? "<html>No existing appointment records could be found.<br>Please schedule an appointment to get started.</html>" : null);
+
+        if (medicalStaffPane != null)
+            medicalStaffPane.setToolTipText(medicalStaffModel.getRowCount() == 0 ? "<html>No existing medical staff records could be found.<br>Please register medical staff to get started.</html>" : null);
     }
 
     // what happens whenever a button is clicked, etc.
@@ -787,21 +826,21 @@ class GUI implements ActionListener {
             case "Schedule Appointment", "Update Appointment" -> new String[] {"Medical Staff ID*", "Patient ID*", "Appointment Date", "Start Time", "End Time"};
             case "Complete Appointment" -> new String[] {"Appointment Diagnosis", "Appointment Prescription", "Appointment Notes"};
             case "Search Medical Staff" -> new String[] {"Medical Staff ID", "First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Program"};
-            case "Register Medical Staff ID" -> new String[] {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Program"};
+            case "Register Medical Staff" -> new String[] {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Medical Staff Type", "Doctor Specialization", "Assigned Program"};
             default -> null;
         };
 
-        Dialog dialog = new Dialog(text.startsWith("Search"), components);
-        List<Object> inputs = text.startsWith("Search") || text.startsWith("Register") ? dialog.showDialog(text) : null;
+        Dialog dialog = !text.startsWith("Delete") && !text.startsWith("Cancel") && !text.equals("Update Appointment") ? new Dialog(text.startsWith("Search"), components) : null;
+        List<Object> inputs = text.startsWith("Search") || text.startsWith("Register") || text.startsWith("Schedule") ? dialog.showDialog(text) : null;
         Map<String, Object> map = new HashMap<>();
-        int id = !text.startsWith("Search") && !text.startsWith("Register") ? Dialog.showIdDialog(text, (text.endsWith("Staff") ? "Medical " : "") + text.split(" ")[text.split(" ").length - 1] + " ID") : 0;
+        int id = !text.startsWith("Search") && !text.startsWith("Register") && !text.startsWith("Schedule") ? Dialog.showIdDialog(text, (text.endsWith("Staff") ? "Medical " : "") + text.split(" ")[text.split(" ").length - 1] + " ID") : 0;
 
         try {
             QueryManager queryManager = new QueryManager();
 
             if (text.equals("Search Patients")) {
                 if (inputs == null)
-                    buildPatientsTableModel();
+                    buildPatientsModel();
                 else {
                     for (int i = 0; i < components.length; i++) {
                         if (inputs.get(i) != null) {
@@ -812,11 +851,11 @@ class GUI implements ActionListener {
                         }
                     }
 
-                    patientsTableModel.setRowCount(0);
+                    patientsModel.setRowCount(0);
 
                     queryManager.filterPatients(map).forEach((patient) -> {
                         try {
-                            buildPatientsTableModelWith(patient);
+                            buildPatientsModelWith(patient);
                         } catch (SQLException | IllegalArgumentException | NullPointerException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
@@ -826,7 +865,7 @@ class GUI implements ActionListener {
                 if (inputs != null) {
                     queryManager.registerPatient(new Patient((String) inputs.get(0), (String) inputs.get(1), (String) inputs.get(2), (String) inputs.get(3), (String) inputs.get(4), (String) inputs.get(5), (LocalDate) inputs.get(6), (String) inputs.get(7)));
 
-                    buildPatientsTableModel();
+                    buildPatientsModel();
                 }
             } else if (text.equals("Update Patient")) {
                 if (id > 0) {
@@ -846,7 +885,7 @@ class GUI implements ActionListener {
 
                         queryManager.updatePatient(patient);
 
-                        buildPatientsTableModel();
+                        buildPatientsModel();
                     }
                 }
             } else if (text.equals("Delete Patient")) {
@@ -858,12 +897,12 @@ class GUI implements ActionListener {
                     if (result == JOptionPane.YES_OPTION) {
                         queryManager.deletePatient(patient);
 
-                        buildPatientsTableModel();
+                        buildPatientsModel();
                     }
                 }
             } else if (text.equals("Search Appointments")) {
                 if (inputs == null)
-                    buildAppointmentsTableModel();
+                    buildAppointmentsModel();
                 else {
                     for (int i = 0; i < components.length; i++) {
                         if (inputs.get(i) != null) {
@@ -876,11 +915,11 @@ class GUI implements ActionListener {
                         }
                     }
 
-                    appointmentsTableModel.setRowCount(0);
+                    appointmentsModel.setRowCount(0);
 
                     queryManager.filterAppointments(map).forEach((appointment) -> {
                         try {
-                            buildAppointmentsTableModelWith(appointment);
+                            buildAppointmentsModelWith(appointment);
                         } catch (SQLException | IllegalArgumentException | NullPointerException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
@@ -890,7 +929,7 @@ class GUI implements ActionListener {
                 if (inputs != null) {
                     queryManager.scheduleAppointment(new Appointment(queryManager.getMedicalStaff((int) inputs.get(0)), queryManager.getPatient((int) inputs.get(1)), (LocalDate) inputs.get(2), (LocalTime) inputs.get(3), (LocalTime) inputs.get(4)));
 
-                    buildAppointmentsTableModel();
+                    buildAppointmentsModel();
                 }
             } else if (text.equals("Complete Appointment")) {
                 if (id > 0) {
@@ -915,8 +954,8 @@ class GUI implements ActionListener {
 
                     queryManager.completeAppointment(appointment);
 
-                    buildAppointmentsTableModel();
-                    buildPatientsTableModel();
+                    buildAppointmentsModel();
+                    buildPatientsModel();
                 }
             } else if (text.equals("Update Appointment")) {
                 if (id > 0) {
@@ -933,7 +972,7 @@ class GUI implements ActionListener {
 
                         queryManager.updateAppointment(appointment);
 
-                        buildAppointmentsTableModel();
+                        buildAppointmentsModel();
                     }
                 }
             } else if (text.equals("Cancel Appointment")) {
@@ -946,7 +985,7 @@ class GUI implements ActionListener {
                         if (result == JOptionPane.YES_OPTION) {
                             queryManager.cancelAppointment(appointment);
 
-                            buildAppointmentsTableModel();
+                            buildAppointmentsModel();
                         }
                     }
                 }
@@ -960,24 +999,24 @@ class GUI implements ActionListener {
                         if (result == JOptionPane.YES_OPTION) {
                             queryManager.deleteAppointment(appointment);
 
-                            buildAppointmentsTableModel();
+                            buildAppointmentsModel();
                         }
                     }
                 }
             } else if (text.equals("Search Medical Staff")) {
                 if (inputs == null)
-                    buildMedicalStaffTableModel();
+                    buildMedicalStaffModel();
                 else {
                     for (int i = 0; i < components.length; i++) {
                         if (inputs.get(i) != null)
                             map.put(components[i].replaceAll("[\\s*]", ""), inputs.get(i));
                     }
 
-                    medicalStaffTableModel.setRowCount(0);
+                    medicalStaffModel.setRowCount(0);
 
                     queryManager.filterMedicalStaff(map).forEach((medicalStaff) -> {
                         try {
-                            buildMedicalStaffTableModelWith(medicalStaff);
+                            buildMedicalStaffModelWith(medicalStaff);
                         } catch (SQLException | IllegalArgumentException | NullPointerException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
@@ -990,7 +1029,7 @@ class GUI implements ActionListener {
                     else
                         queryManager.registerMedicalStaff(new Nurse((String) inputs.get(0), (String) inputs.get(1), (String) inputs.get(2), (String) inputs.get(3), (String) inputs.get(4), (String) inputs.get(5), String.valueOf(inputs.get(6)), (String) inputs.get(7), (String) inputs.get(8), (String) inputs.get(11)));
 
-                    buildMedicalStaffTableModel();
+                    buildMedicalStaffModel();
                 }
             } else if (text.equals("Update Medical Staff")) {
                 if (id > 0) {
@@ -1001,7 +1040,7 @@ class GUI implements ActionListener {
                     else
                         components = new String[] {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Assigned Program"};
 
-                    inputs = dialog.showDialog(text, new Object[] {medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : ((Nurse) medicalStaff).getAssignedProgram()});
+                    inputs = new Dialog(false, components).showDialog(text, new Object[] {medicalStaff.getFirstName(), medicalStaff.getMiddleName(), medicalStaff.getLastName(), medicalStaff.getNameSuffix(), medicalStaff.getMobileNumber(), medicalStaff.getEmailAddress(), medicalStaff.getLicenseNumber(), medicalStaff.getEmploymentType(), medicalStaff.getShiftSchedule(), medicalStaff instanceof Doctor doctor ? doctor.getSpecialization() : ((Nurse) medicalStaff).getAssignedProgram()});
 
                     if (inputs != null) {
                         medicalStaff.setFirstName((String) inputs.get(0));
@@ -1021,7 +1060,7 @@ class GUI implements ActionListener {
 
                         queryManager.updateMedicalStaff(medicalStaff);
 
-                        buildMedicalStaffTableModel();
+                        buildMedicalStaffModel();
                     }
                 }
             } else if (text.equals("Delete Medical Staff")) {
@@ -1033,12 +1072,13 @@ class GUI implements ActionListener {
                     if (result == JOptionPane.YES_OPTION) {
                         queryManager.deleteMedicalStaff(medicalStaff);
 
-                        buildMedicalStaffTableModel();
+                        buildMedicalStaffModel();
                     }
                 }
             }
         } catch (SQLException | IllegalArgumentException | NullPointerException e) {
             Dialog.showErrorDialog(e.getMessage());
+            e.printStackTrace();
         }
     }
 }

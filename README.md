@@ -1,5 +1,5 @@
 # BaraHSPAS
-![Static Badge](https://img.shields.io/badge/IT_203-Final_Project-orange) ![Static Badge](https://img.shields.io/badge/BSIT_2H--G1-Group_A-blue) ![Static Badge](https://img.shields.io/badge/Java-Swing_GUI-5382a1?logo=coffeescript) ![Static Badge](https://img.shields.io/badge/LaF-FlatDarkLaF-3c3f41) ![Static Badge](https://img.shields.io/badge/SQLite-003B57?logo=sqlite)
+![IT 203 Final Project](https://img.shields.io/badge/IT_203-Final_Project-orange) ![BSIT 2H-G1 Group A](https://img.shields.io/badge/BSIT_2H--G1-Group_A-blue) ![Java Swing GUI](https://img.shields.io/badge/Java-Swing_GUI-5382a1?logo=coffeescript) ![FlatMTGitHubDarkIJTheme Look and Feel](https://img.shields.io/badge/Look_and_Feel-FlatMTGitHubDarkIJTheme-24292e) ![Material Design Icons](https://img.shields.io/badge/Material_Design_Icons-2196F3?logo=materialdesignicons&logoColor=white) ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite)
 
 A barangay health station patient and appointment system
 
