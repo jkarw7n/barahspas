@@ -134,7 +134,7 @@ class GUI implements ActionListener {
         frame.add(mainPanel);
     }
 
-    // Creates the about panel and adds it to the main panel
+    // creates the about panel and adds it to the main panel
     private void addAboutPanel() {
         JPanel aboutPanel = new JPanel(new BorderLayout()),
             boxPanel = new JPanel();
@@ -171,7 +171,7 @@ class GUI implements ActionListener {
         mainPanel.add(aboutPanel, "About");
     }
 
-    // Creates the patients panel and adds it to the main panel
+    // creates the patients panel and adds it to the main panel
     private void addPatientsPanel() throws SQLException {
         JPanel patientsPanel = new JPanel(new BorderLayout());
         JToolBar toolbar = new JToolBar();
