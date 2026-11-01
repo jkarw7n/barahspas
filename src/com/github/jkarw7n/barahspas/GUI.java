@@ -830,10 +830,23 @@ class GUI implements ActionListener {
             default -> null;
         };
 
-        Dialog dialog = !text.startsWith("Delete") && !text.startsWith("Cancel") && !text.equals("Update Appointment") ? new Dialog(text.startsWith("Search"), components) : null;
+        Dialog dialog = components != null ? new Dialog(text.startsWith("Search"), components) : null;
+
         List<Object> inputs = text.startsWith("Search") || text.startsWith("Register") || text.startsWith("Schedule") ? dialog.showDialog(text) : null;
+
         Map<String, Object> map = new HashMap<>();
+
         int id = !text.startsWith("Search") && !text.startsWith("Register") && !text.startsWith("Schedule") ? Dialog.showIdDialog(text, (text.endsWith("Staff") ? "Medical " : "") + text.split(" ")[text.split(" ").length - 1] + " ID") : 0;
+
+        Patient patient = null;
+        Appointment appointment = null;
+        MedicalStaff medicalStaff = null;
+
+        var sqlException = new SQLException() {
+            public SQLException forTableAndId(String table, int id) {
+                return new SQLException("No existing " + table + " record could be found with ID " + id + ".");
+            }
+        };
 
         try {
             QueryManager queryManager = new QueryManager();
@@ -853,9 +866,9 @@ class GUI implements ActionListener {
 
                     patientsModel.setRowCount(0);
 
-                    queryManager.filterPatients(map).forEach((patient) -> {
+                    queryManager.filterPatients(map).forEach((foundPatient) -> {
                         try {
-                            buildPatientsModelWith(patient);
+                            buildPatientsModelWith(foundPatient);
                         } catch (SQLException | IllegalArgumentException | NullPointerException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
@@ -869,7 +882,14 @@ class GUI implements ActionListener {
                 }
             } else if (text.equals("Update Patient")) {
                 if (id > 0) {
-                    Patient patient = queryManager.getPatient(id);
+                    try {
+                        patient = queryManager.getPatient(id);
+
+                        if (patient == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("patient", id);
+                    }
 
                     inputs = dialog.showDialog(text, new Object[] {patient.getFirstName(), patient.getMiddleName(), patient.getLastName(), patient.getNameSuffix(), patient.getMobileNumber(), patient.getEmailAddress(), patient.getBirthDate(), patient.getSex()});
 
@@ -890,7 +910,14 @@ class GUI implements ActionListener {
                 }
             } else if (text.equals("Delete Patient")) {
                 if (id > 0) {
-                    Patient patient = queryManager.getPatient(id);
+                    try {
+                        patient = queryManager.getPatient(id);
+
+                        if (patient == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("patient", id);
+                    }
 
                     int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete patient " + patient.getFullName() + "?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
@@ -917,9 +944,9 @@ class GUI implements ActionListener {
 
                     appointmentsModel.setRowCount(0);
 
-                    queryManager.filterAppointments(map).forEach((appointment) -> {
+                    queryManager.filterAppointments(map).forEach((foundAppointment) -> {
                         try {
-                            buildAppointmentsModelWith(appointment);
+                            buildAppointmentsModelWith(foundAppointment);
                         } catch (SQLException | IllegalArgumentException | NullPointerException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
@@ -927,13 +954,38 @@ class GUI implements ActionListener {
                 }
             } else if (text.equals("Schedule Appointment")) {
                 if (inputs != null) {
-                    queryManager.scheduleAppointment(new Appointment(queryManager.getMedicalStaff((int) inputs.get(0)), queryManager.getPatient((int) inputs.get(1)), (LocalDate) inputs.get(2), (LocalTime) inputs.get(3), (LocalTime) inputs.get(4)));
+                    try {
+                        medicalStaff = queryManager.getMedicalStaff((int) inputs.get(0));
+
+                        if (medicalStaff == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("medical staff", (int) inputs.get(0));
+                    }
+
+                    try {
+                        patient = queryManager.getPatient((int) inputs.get(1));
+
+                        if (patient == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("patient", (int) inputs.get(1));
+                    }
+
+                    queryManager.scheduleAppointment(new Appointment(medicalStaff, patient, (LocalDate) inputs.get(2), (LocalTime) inputs.get(3), (LocalTime) inputs.get(4)));
 
                     buildAppointmentsModel();
                 }
             } else if (text.equals("Complete Appointment")) {
                 if (id > 0) {
-                    Appointment appointment = queryManager.getAppointment(id);
+                    try {
+                        appointment = queryManager.getAppointment(id);
+
+                        if (appointment == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("appointment", id);
+                    }
 
                     if (appointment.getDate().isAfter(LocalDate.now())) {
                         Dialog.showErrorDialog("Appointment cannot be marked as completed before the input appointment date. Please update the appointment first.");
@@ -959,7 +1011,14 @@ class GUI implements ActionListener {
                 }
             } else if (text.equals("Update Appointment")) {
                 if (id > 0) {
-                    Appointment appointment = queryManager.getAppointment(id);
+                    try {
+                        appointment = queryManager.getAppointment(id);
+
+                        if (appointment == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("appointment", id);
+                    }
 
                     inputs = dialog.showDialog(text, new Object[] {appointment.getMedicalStaff().getId(), appointment.getPatient().getId(), appointment.getDate(), appointment.getStartTime(), appointment.getEndTime()});
 
@@ -977,30 +1036,40 @@ class GUI implements ActionListener {
                 }
             } else if (text.equals("Cancel Appointment")) {
                 if (id > 0) {
-                    Appointment appointment = queryManager.getAppointment(id);
+                    try {
+                        appointment = queryManager.getAppointment(id);
 
-                    if (appointment != null) {
-                        int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to cancel appointment " + id + " (" + appointment.getDate().format(dateFormatter) + ", " + appointment.getStartTime().format(timeFormatter) + " to " + appointment.getEndTime().format(timeFormatter) + ")?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                        if (appointment == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("appointment", id);
+                    }
 
-                        if (result == JOptionPane.YES_OPTION) {
-                            queryManager.cancelAppointment(appointment);
+                    int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to cancel appointment " + id + " (" + appointment.getDate().format(dateFormatter) + ", " + appointment.getStartTime().format(timeFormatter) + " to " + appointment.getEndTime().format(timeFormatter) + ")?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
-                            buildAppointmentsModel();
-                        }
+                    if (result == JOptionPane.YES_OPTION) {
+                        queryManager.cancelAppointment(appointment);
+
+                        buildAppointmentsModel();
                     }
                 }
             } else if (text.equals("Delete Appointment")) {
                 if (id > 0) {
-                    Appointment appointment = queryManager.getAppointment(id);
+                    try {
+                        appointment = queryManager.getAppointment(id);
 
-                    if (appointment != null) {
-                        int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete appointment " + id + " (" + appointment.getDate().format(dateFormatter) + ", " + appointment.getStartTime().format(timeFormatter) + " to " + appointment.getEndTime().format(timeFormatter) + ")?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                        if (appointment == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("appointment", id);
+                    }
 
-                        if (result == JOptionPane.YES_OPTION) {
-                            queryManager.deleteAppointment(appointment);
+                    int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete appointment " + id + " (" + appointment.getDate().format(dateFormatter) + ", " + appointment.getStartTime().format(timeFormatter) + " to " + appointment.getEndTime().format(timeFormatter) + ")?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
-                            buildAppointmentsModel();
-                        }
+                    if (result == JOptionPane.YES_OPTION) {
+                        queryManager.deleteAppointment(appointment);
+
+                        buildAppointmentsModel();
                     }
                 }
             } else if (text.equals("Search Medical Staff")) {
@@ -1014,9 +1083,9 @@ class GUI implements ActionListener {
 
                     medicalStaffModel.setRowCount(0);
 
-                    queryManager.filterMedicalStaff(map).forEach((medicalStaff) -> {
+                    queryManager.filterMedicalStaff(map).forEach((foundMedicalStaff) -> {
                         try {
-                            buildMedicalStaffModelWith(medicalStaff);
+                            buildMedicalStaffModelWith(foundMedicalStaff);
                         } catch (SQLException | IllegalArgumentException | NullPointerException e) {
                             Dialog.showErrorDialog(e.getMessage());
                         }
@@ -1033,7 +1102,14 @@ class GUI implements ActionListener {
                 }
             } else if (text.equals("Update Medical Staff")) {
                 if (id > 0) {
-                    MedicalStaff medicalStaff = queryManager.getMedicalStaff(id);
+                    try {
+                        medicalStaff = queryManager.getMedicalStaff(id);
+
+                        if (medicalStaff == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("medical staff", id);
+                    }
 
                     if (medicalStaff instanceof Doctor)
                         components = new String[] {"First Name", "Middle Name", "Last Name", "Name Suffix", "Mobile Number", "Email Address", "License Number", "Employment Type", "Shift Schedule", "Doctor Specialization"};
@@ -1065,7 +1141,14 @@ class GUI implements ActionListener {
                 }
             } else if (text.equals("Delete Medical Staff")) {
                 if (id > 0) {
-                    MedicalStaff medicalStaff = queryManager.getMedicalStaff(id);
+                    try {
+                        medicalStaff = queryManager.getMedicalStaff(id);
+
+                        if (medicalStaff == null)
+                            throw new NullPointerException();
+                    } catch (NullPointerException e) {
+                        throw sqlException.forTableAndId("medical staff", id);
+                    }
 
                     int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete medical staff " + medicalStaff.getFullName() + "?", text, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
 
@@ -1076,7 +1159,7 @@ class GUI implements ActionListener {
                     }
                 }
             }
-        } catch (SQLException | IllegalArgumentException | NullPointerException e) {
+        } catch (SQLException | IllegalArgumentException e) {
             Dialog.showErrorDialog(e.getMessage());
             e.printStackTrace();
         }
