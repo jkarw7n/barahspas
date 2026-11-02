@@ -2,7 +2,8 @@
 *.db
 *.jar
 
-bin/*
+bin
 !bin/img
-lib/*
+lib
 !lib/.gitkeep
+misc

@@ -20,7 +20,7 @@ class GUI implements ActionListener {
     private JPanel mainPanel;
     private JScrollPane patientsPane, appointmentsPane, medicalStaffPane;
     private DefaultTableModel patientsModel, appointmentsModel, medicalStaffModel;
-    private static DateTimeFormatter dateFormatter, timeFormatter;
+    private DateTimeFormatter dateFormatter, timeFormatter;
 
     public GUI() throws SQLException, UnsupportedLookAndFeelException {
         UIManager.setLookAndFeel(new FlatMTGitHubDarkIJTheme());
