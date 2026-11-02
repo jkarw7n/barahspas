@@ -41,7 +41,7 @@ class Patient extends Person {
 
     public LocalDate getBirthDate() { return birthDate; }
     public String getSex() { return sex; }
-    public List<Object[]> getMedicalRecords() { return new ArrayList<>(medicalRecords); }
+    public List<Object[]> getMedicalRecords() { return medicalRecords != null ? new ArrayList<>(medicalRecords) : null; }
 
     public void setBirthDate(LocalDate birthDate) {
         if (birthDate == null)

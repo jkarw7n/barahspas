@@ -52,6 +52,7 @@ class Dialog {
             appointmentDateLabel = requiredLabel("Appointment Date"),
             startTimeLabel = requiredLabel("Start Time"),
             endTimeLabel = requiredLabel("End Time"),
+            appointmentStatusLabel = new JLabel("Appointment Status"),
             appointmentDiagnosisLabel = requiredLabel("Appointment Diagnosis"),
             appointmentPrescriptionLabel = requiredLabel("Appointment Prescription"),
             appointmentNotesLabel = new JLabel("Appointment Notes");
@@ -95,6 +96,7 @@ class Dialog {
             patientSexBox = new JComboBox<>(forSearching ? new String[] {"None", "Male", "Female"} : new String[] {"Male", "Female"}),
             startTimeMeridianBox = new JComboBox<>(new String[] {"AM", "PM"}),
             endTimeMeridianBox = new JComboBox<>(new String[] {"AM", "PM"}),
+            appointmentStatusBox = new JComboBox<>(new String[] {"None", "Scheduled", "Completed", "Cancelled"}),
             employmentTypeBox = new JComboBox<>(forSearching ? new String[] {"None", "Plantilla", "Doctors to the Barrio", "Contract of Service", "Volunteer"} : new String[] {"Plantilla", "Doctors to the Barrio", "Contract of Service", "Volunteer"}),
             medicalStaffTypeBox = new JComboBox<>(forSearching ? new String[] {"None", "Doctor", "Nurse"} : new String[] {"Doctor", "Nurse"}),
             assignedProgramBox = new JComboBox<>(forSearching ? new String[] {"None", "Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"} : new String[] {"Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"});
@@ -167,32 +169,12 @@ class Dialog {
         patientSexBox.setEditable(false);
         startTimeMeridianBox.setEditable(false);
         endTimeMeridianBox.setEditable(false);
+        appointmentStatusBox.setEditable(false);
         employmentTypeBox.setEditable(false);
         medicalStaffTypeBox.setEditable(false);
         assignedProgramBox.setEditable(false);
 
         // disable editing the doctor specialization field if the Dialog class' medicalStaffType field is not "Doctor", etc., as well as change their label's text and tooltip text
-        if (medicalStaffTypeBox.getItemAt(0).equals("None")) {
-            doctorSpecializationField.setEnabled(false);
-            assignedProgramBox.setEnabled(false);
-
-            doctorSpecializationLabel.setText("Doctor Specialization");
-            doctorSpecializationLabel.setToolTipText(null);
-            assignedProgramLabel.setText("Assigned Program");
-            assignedProgramLabel.setToolTipText(null);
-        } else {
-            doctorSpecializationField.setEnabled(true);
-            assignedProgramBox.setEnabled(false);
-
-            if (!forSearching) {
-                doctorSpecializationLabel.setText("Doctor Specialization (*)");
-                doctorSpecializationLabel.setToolTipText("Required field");
-            }
-
-            assignedProgramLabel.setText("Assigned Program");
-            assignedProgramLabel.setToolTipText(null);
-        }
-
         medicalStaffTypeBox.addActionListener(e -> {
             switch ((String) medicalStaffTypeBox.getSelectedItem()) {
                 case "Doctor":
@@ -353,6 +335,10 @@ class Dialog {
                         nonNullableIndices.add(nonNullableIndex);
 
                     break;
+                case "Appointment Status":
+                    dialogPanel.add(appointmentStatusLabel);
+                    dialogPanel.add(appointmentStatusBox);
+                    break;
                 case "Appointment Diagnosis":
                     dialogPanel.add(appointmentDiagnosisLabel);
                     dialogPanel.add(appointmentDiagnosisField);
@@ -414,6 +400,27 @@ class Dialog {
                 assignedProgramBox.setEnabled(true);
             }
         }
+
+        if (medicalStaffTypeBox.getItemAt(0).equals("None")) {
+            doctorSpecializationField.setEnabled(false);
+            assignedProgramBox.setEnabled(false);
+
+            doctorSpecializationLabel.setText("Doctor Specialization");
+            doctorSpecializationLabel.setToolTipText(null);
+            assignedProgramLabel.setText("Assigned Program");
+            assignedProgramLabel.setToolTipText(null);
+        } else {
+            doctorSpecializationField.setEnabled(true);
+            assignedProgramBox.setEnabled(false);
+
+            if (!forSearching) {
+                doctorSpecializationLabel.setText("Doctor Specialization (*)");
+                doctorSpecializationLabel.setToolTipText("Required field");
+            }
+
+            assignedProgramLabel.setText("Assigned Program");
+            assignedProgramLabel.setToolTipText(null);
+        }
     }
 
     public List<Object> showDialog(String dialogTitle) {
@@ -436,7 +443,18 @@ class Dialog {
             else if (component instanceof JComboBox comboBox)
                 comboBox.setSelectedItem(fillValue != null ? fillValue : comboBox.getSelectedItem());
             else if (component instanceof JSpinner spinner) {
-                spinner.setValue(Integer.parseInt((String) fillValue));
+                if (fillValue == null)
+                    spinner.setValue(0);
+                else {
+                    if (fillValue instanceof Number number)
+                        spinner.setValue(number.intValue());
+                    else if (fillValue instanceof String string) {
+                        if (string.isBlank())
+                            spinner.setValue(0);
+                        else
+                            spinner.setValue(Integer.parseInt(string.strip()));
+                    }
+                }
             } else if (component instanceof JPanel panel) {
                 if (panel.getComponent(2) instanceof JSpinner) {
                     LocalDate date = (LocalDate) fillValue;
@@ -526,12 +544,12 @@ class Dialog {
             } else if (component instanceof JSpinner spinner) {
                 if (spinner.getClientProperty("isLicenseNumber") != null && (int) spinner.getValue() != 0)
                     inputValues.add(String.format("%07d", (int) spinner.getValue()));
-                else if ((int) spinner.getValue() == 0)
+                else if ((int) spinner.getValue() == 0) {
                     if (nonNullableIndices.contains(i) && !forSearching)
                         showErrorDialog("Required spinner field's value cannot be 0.");
                     else
                         inputValues.add(null);
-                else
+                } else
                     inputValues.add((int) spinner.getValue());
             } else if (component instanceof JPanel panel) {
                 // checks if the panel is for inputting dates or timestamps

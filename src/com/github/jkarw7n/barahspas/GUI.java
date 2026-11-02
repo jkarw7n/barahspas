@@ -993,21 +993,21 @@ class GUI implements ActionListener {
                         return;
                     }
 
-                    if (appointment.getMedicalStaff().canDiagnoseAndPrescribe()) {
-                        if (inputs != null) {
+                    inputs = appointment.getMedicalStaff().canDiagnoseAndPrescribe() ? dialog.showDialog(text) : new Dialog(false, new String[] {"Appointment Notes"}).showDialog(text);
+
+                    if (inputs != null) {
+                        if (appointment.getMedicalStaff().canDiagnoseAndPrescribe()) {
                             appointment.setDiagnosis((String) inputs.get(0));
                             appointment.setPrescription((String) inputs.get(1));
                             appointment.setNotes((String) inputs.get(2));
-                        }
-                    } else {
-                        if (inputs != null)
-                            appointment.setNotes((String) new Dialog(false, new String[] {"Appointment Notes"}).showDialog(text).get(0));
-                    }
+                        } else
+                            appointment.setNotes((String) inputs.get(0));
 
-                    queryManager.completeAppointment(appointment);
+                        queryManager.completeAppointment(appointment);
 
-                    buildAppointmentsModel();
-                    buildPatientsModel();
+                        buildAppointmentsModel();
+                        buildPatientsModel();
+                    } 
                 }
             } else if (text.equals("Update Appointment")) {
                 if (id > 0) {
@@ -1096,7 +1096,7 @@ class GUI implements ActionListener {
                     if (((String) inputs.get(9)).equals("Doctor"))
                         queryManager.registerMedicalStaff(new Doctor((String) inputs.get(0), (String) inputs.get(1), (String) inputs.get(2), (String) inputs.get(3), (String) inputs.get(4), (String) inputs.get(5), String.valueOf(inputs.get(6)), (String) inputs.get(7), (String) inputs.get(8), (String) inputs.get(10)));
                     else
-                        queryManager.registerMedicalStaff(new Nurse((String) inputs.get(0), (String) inputs.get(1), (String) inputs.get(2), (String) inputs.get(3), (String) inputs.get(4), (String) inputs.get(5), String.valueOf(inputs.get(6)), (String) inputs.get(7), (String) inputs.get(8), (String) inputs.get(11)));
+                        queryManager.registerMedicalStaff(new Nurse((String) inputs.get(0), (String) inputs.get(1), (String) inputs.get(2), (String) inputs.get(3), (String) inputs.get(4), (String) inputs.get(5), inputs.get(6) != null ? String.valueOf(inputs.get(6)) : null, (String) inputs.get(7), (String) inputs.get(8), (String) inputs.get(11)));
 
                     buildMedicalStaffModel();
                 }
@@ -1125,7 +1125,7 @@ class GUI implements ActionListener {
                         medicalStaff.setNameSuffix((String) inputs.get(3));
                         medicalStaff.setMobileNumber((String) inputs.get(4));
                         medicalStaff.setEmailAddress((String) inputs.get(5));
-                        medicalStaff.setLicenseNumber(String.valueOf(inputs.get(6)));
+                        medicalStaff.setLicenseNumber(inputs.get(6) != null ? String.valueOf(inputs.get(6)) : null);
                         medicalStaff.setEmploymentType((String) inputs.get(7));
                         medicalStaff.setShiftSchedule((String) inputs.get(8));
                         
@@ -1161,7 +1161,6 @@ class GUI implements ActionListener {
             }
         } catch (SQLException | IllegalArgumentException e) {
             Dialog.showErrorDialog(e.getMessage());
-            e.printStackTrace();
         }
     }
 }
