@@ -30,6 +30,7 @@ class Appointment implements Identifiable {
         setStatus("Scheduled");
     }
 
+    @Override
     public int getId() { return id; }
     public MedicalStaff getMedicalStaff() { return medicalStaff; }
     public Patient getPatient() { return patient; }
@@ -41,6 +42,7 @@ class Appointment implements Identifiable {
     public String getPrescription() { return prescription; }
     public String getNotes() { return notes; }
 
+    @Override
     public void setId(int id) {
         if (id <= 0)
             throw new IllegalArgumentException("Error: Appointment ID cannot be equal to or less than zero.");

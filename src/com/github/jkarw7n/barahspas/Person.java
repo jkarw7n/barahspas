@@ -36,6 +36,7 @@ abstract class Person implements Identifiable {
         setEmailAddress(emailAddress);
     }
 
+    @Override
     public int getId() { return id; }
     public String getFirstName() { return firstName; }
     public String getMiddleName() { return middleName; }
@@ -44,6 +45,7 @@ abstract class Person implements Identifiable {
     public String getMobileNumber() { return mobileNumber; }
     public String getEmailAddress() { return emailAddress; }
 
+    @Override
     public void setId(int id) {
         if (id <= 0)
             throw new IllegalArgumentException("Error: Person ID cannot be equal to or less than zero.");
