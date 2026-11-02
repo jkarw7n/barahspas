@@ -28,11 +28,11 @@ class Dialog {
         dialogPanel = new JPanel(new GridLayout(0, 2, 5, 5));
         nonNullableIndices = new ArrayList<>();
 
-        // Log-in dialog labels
+        // log-in dialog labels
         JLabel usernameLabel = requiredLabel("Username"),
             passwordLabel = requiredLabel("Password");
 
-        // General dialog labels
+        // general dialog labels
         JLabel firstNameLabel = requiredLabel("First Name"),
             middleNameLabel = new JLabel("Middle Name"),
             lastNameLabel = requiredLabel("Last Name"),
@@ -40,12 +40,12 @@ class Dialog {
             mobileNumberLabel = requiredLabel("Mobile Number"),
             emailAddressLabel = new JLabel("Email Address");
 
-        // Patient dialog labels
+        // patient dialog labels
         JLabel patientIdLabel = new JLabel("Patient ID"),
             birthDateLabel = requiredLabel("Birth Date (Month, Day, Year)"),
             patientSexLabel = requiredLabel("Patient Sex");
 
-        // Appointment dialog labels
+        // appointment dialog labels
         JLabel appointmentIdLabel = new JLabel("Appointment ID"),
             appointmentMedicalStaffIdLabel = requiredLabel("Medical Staff ID"),
             appointmentPatientIdLabel = requiredLabel("Patient ID"),
@@ -56,7 +56,7 @@ class Dialog {
             appointmentPrescriptionLabel = requiredLabel("Appointment Prescription"),
             appointmentNotesLabel = new JLabel("Appointment Notes");
 
-        // Medical Staff dialog labels
+        // medical Staff dialog labels
         JLabel medicalStaffIdLabel = new JLabel("Medical Staff ID"),
             licenseNumberLabel = new JLabel("License Number"),
             employmentTypeLabel = requiredLabel("Employment Type"),
@@ -65,16 +65,16 @@ class Dialog {
             doctorSpecializationLabel = new JLabel("Doctor Specialization"),
             assignedProgramLabel = new JLabel("Assigned Program");
 
-        // Grid layouts
+        // grid layouts
         GridLayout gridLayout = new GridLayout(1, 3, 5, 0);
 
-        // Panels
+        // panels
         JPanel birthDatePanel = new JPanel(gridLayout),
             appointmentDatePanel = new JPanel(gridLayout),
             startTimePanel = new JPanel(gridLayout),
             endTimePanel = new JPanel(gridLayout);
 
-        // Text fields
+        // text fields
         JTextField usernameField = new JTextField(),
             firstNameField = new JTextField(),
             middleNameField = new JTextField(),
@@ -87,10 +87,10 @@ class Dialog {
             appointmentPrescriptionField = new JTextField(),
             appointmentNotesField = new JTextField();
         
-        // Log-in password field
+        // log-in password field
         JPasswordField passwordField = new JPasswordField();
 
-        // Combo boxes
+        // combo boxes
         JComboBox<String> nameSuffixBox = new JComboBox<>(new String[] {"None", "Jr.", "Sr.", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"}),
             patientSexBox = new JComboBox<>(forSearching ? new String[] {"None", "Male", "Female"} : new String[] {"Male", "Female"}),
             startTimeMeridianBox = new JComboBox<>(new String[] {"AM", "PM"}),
@@ -99,7 +99,7 @@ class Dialog {
             medicalStaffTypeBox = new JComboBox<>(forSearching ? new String[] {"None", "Doctor", "Nurse"} : new String[] {"Doctor", "Nurse"}),
             assignedProgramBox = new JComboBox<>(forSearching ? new String[] {"None", "Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"} : new String[] {"Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"});
 
-        // Spinners
+        // spinners
         LocalDate dateToday = LocalDate.now();
         JSpinner patientIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 10000, 1)),
             birthDateMonthSpinner = new JSpinner(new SpinnerNumberModel(1, 1, 12, 1)),
@@ -118,20 +118,20 @@ class Dialog {
             medicalStaffIdSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 10000, 1)),
             licenseNumberSpinner = new JSpinner(new SpinnerNumberModel(0, 0, 9999999, 1));
 
-        // Remove comma from spinner values exceeding 1000
+        // remove comma from spinner values exceeding 1000
         for (JSpinner spinner : new JSpinner[] {patientIdSpinner, birthDateYearSpinner, appointmentIdSpinner, appointmentMedicalStaffIdSpinner, appointmentPatientIdSpinner, appointmentDateYearSpinner}) {
             spinner.setEditor(new JSpinner.NumberEditor(spinner, "#"));
         }
 
-        // Force minute spinner values to always be two-digit
+        // force minute spinner values to always be two-digit
         startTimeMinuteSpinner.setEditor(new JSpinner.NumberEditor(startTimeMinuteSpinner, "00"));
         endTimeMinuteSpinner.setEditor(new JSpinner.NumberEditor(endTimeMinuteSpinner, "00"));
 
-        // Force license number spinner values to always be seven-digit
+        // force license number spinner values to always be seven-digit
         licenseNumberSpinner.putClientProperty("isLicenseNumber", "");
         licenseNumberSpinner.setEditor(new JSpinner.NumberEditor(licenseNumberSpinner, "0000000"));
 
-        // Add components to panels
+        // add components to panels
         birthDatePanel.add(birthDateMonthSpinner);
         birthDatePanel.add(birthDateDaySpinner);
         birthDatePanel.add(birthDateYearSpinner);
@@ -148,7 +148,7 @@ class Dialog {
         endTimePanel.add(endTimeMinuteSpinner);
         endTimePanel.add(endTimeMeridianBox);
 
-        // Add placeholders to text fields
+        // add placeholders to text fields
         usernameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter username here");
         passwordField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter password here");
         firstNameField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter first name here");
@@ -162,7 +162,7 @@ class Dialog {
         appointmentPrescriptionField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter appointment prescription here");
         appointmentNotesField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "Enter appointment notes here");
 
-        // Make combo boxes not editable
+        // make combo boxes not editable
         nameSuffixBox.setEditable(false);
         patientSexBox.setEditable(false);
         startTimeMeridianBox.setEditable(false);
@@ -171,7 +171,7 @@ class Dialog {
         medicalStaffTypeBox.setEditable(false);
         assignedProgramBox.setEditable(false);
 
-        // Disable editing the doctor specialization field if the Dialog class' medicalStaffType field is not "Doctor", etc., as well as change their label's text and tooltip text
+        // disable editing the doctor specialization field if the Dialog class' medicalStaffType field is not "Doctor", etc., as well as change their label's text and tooltip text
         if (medicalStaffTypeBox.getItemAt(0).equals("None")) {
             doctorSpecializationField.setEnabled(false);
             assignedProgramBox.setEnabled(false);
@@ -238,7 +238,7 @@ class Dialog {
             }
         }
 
-        // Add the components in the argument to dialogPanel
+        // add the components in the argument to dialogPanel
         for (int i = 0; i < dialogComponents.length; i++) {
             int nonNullableIndex = (i * 2) + 1;
 

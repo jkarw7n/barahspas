@@ -43,6 +43,7 @@ class Doctor extends MedicalStaff {
         this.specialization = specialization.replaceAll("\\s+", " ").strip();
     }
 
+    @Override
     public boolean canDiagnoseAndPrescribe() {
         return super.getLicenseNumber() != null;
     }

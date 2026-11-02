@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 class QueryManager {
+    private Connection connection;
     private static final String DATABASE_URL = "jdbc:sqlite:barahspas.db";
-    private static Connection connection;
 
     public QueryManager() throws SQLException {
         connection = DriverManager.getConnection(DATABASE_URL);

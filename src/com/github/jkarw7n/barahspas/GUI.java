@@ -176,12 +176,12 @@ class GUI implements ActionListener {
         JPanel patientsPanel = new JPanel(new BorderLayout());
         JToolBar toolbar = new JToolBar();
 
-        toolbar.setMargin(new Insets(3, 3, 3, 3));
+        toolbar.setMargin(new Insets(5, 5, 5, 5));
 
-        JButton searchButton = new JButton(svgIconOf("search.svg")),
-            registerButton = new JButton(svgIconOf("add.svg")),
-            updateButton = new JButton(svgIconOf("update.svg")),
-            deleteButton = new JButton(svgIconOf("delete.svg"));
+        JButton searchButton = new JButton(svgIconOf("search")),
+            registerButton = new JButton(svgIconOf("add")),
+            updateButton = new JButton(svgIconOf("update")),
+            deleteButton = new JButton(svgIconOf("delete"));
         
         searchButton.setToolTipText("Search Patients");
         registerButton.setToolTipText("Register Patient");
@@ -371,14 +371,14 @@ class GUI implements ActionListener {
         JPanel appointmentsPanel = new JPanel(new BorderLayout());
         JToolBar toolbar = new JToolBar();
 
-        toolbar.setMargin(new Insets(3, 3, 3, 3));
+        toolbar.setMargin(new Insets(5, 5, 5, 5));
 
-        JButton searchButton = new JButton(svgIconOf("search.svg")),
-            scheduleButton = new JButton(svgIconOf("add.svg")),
-            completeButton = new JButton(svgIconOf("complete.svg")),
-            updateButton = new JButton(svgIconOf("update.svg")),
-            cancelButton = new JButton(svgIconOf("cancel.svg")),
-            deleteButton = new JButton(svgIconOf("delete.svg"));
+        JButton searchButton = new JButton(svgIconOf("search")),
+            scheduleButton = new JButton(svgIconOf("add")),
+            completeButton = new JButton(svgIconOf("complete")),
+            updateButton = new JButton(svgIconOf("update")),
+            cancelButton = new JButton(svgIconOf("cancel")),
+            deleteButton = new JButton(svgIconOf("delete"));
         
         searchButton.setToolTipText("Search Appointments");
         scheduleButton.setToolTipText("Schedule Appointment");
@@ -550,12 +550,12 @@ class GUI implements ActionListener {
         JPanel medicalStaffPanel = new JPanel(new BorderLayout());
         JToolBar toolbar = new JToolBar();
         
-        toolbar.setMargin(new Insets(3, 3, 3, 3));
+        toolbar.setMargin(new Insets(5, 5, 5, 5));
 
-        JButton searchButton = new JButton(svgIconOf("search.svg")),
-            registerButton = new JButton(svgIconOf("add.svg")),
-            updateButton = new JButton(svgIconOf("update.svg")),
-            deleteButton = new JButton(svgIconOf("delete.svg"));
+        JButton searchButton = new JButton(svgIconOf("search")),
+            registerButton = new JButton(svgIconOf("add")),
+            updateButton = new JButton(svgIconOf("update")),
+            deleteButton = new JButton(svgIconOf("delete"));
         
         searchButton.setToolTipText("Search Medical Staff");
         registerButton.setToolTipText("Register Medical Staff");
@@ -747,7 +747,7 @@ class GUI implements ActionListener {
     }
 
     private FlatSVGIcon svgIconOf(String name) {
-        return new FlatSVGIcon(GUI.class.getResource("/img/" + name)).derive(25, 25);
+        return new FlatSVGIcon(GUI.class.getResource("/img/" + name + ".svg")).derive(30, 30);
     }
 
     private void buildPatientsModelWith(Patient patient) throws SQLException {

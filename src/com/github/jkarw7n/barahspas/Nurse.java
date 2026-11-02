@@ -40,10 +40,9 @@ class Nurse extends MedicalStaff {
         if (assignedProgram == null || assignedProgram.isBlank())
             throw new IllegalArgumentException("Error: Nurse assigned program cannot be null or blank.");
 
-        // String[] assignedPrograms = {"Maternal and Child Health", "Immunization and Vaccines", "Family Planning", "Disease Control and Screening", "General Consultation and Vitals", "Environmental and Sanitary Health", "Mental Health and Substance Support"};
-
         this.assignedProgram = assignedProgram;
     }
 
+    @Override
     public boolean canDiagnoseAndPrescribe() { return false; }
 }

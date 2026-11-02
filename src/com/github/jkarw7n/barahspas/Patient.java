@@ -2,6 +2,7 @@ package com.github.jkarw7n.barahspas;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 class Patient extends Person {
@@ -40,7 +41,7 @@ class Patient extends Person {
 
     public LocalDate getBirthDate() { return birthDate; }
     public String getSex() { return sex; }
-    public List<Object[]> getMedicalRecords() { return medicalRecords; }
+    public List<Object[]> getMedicalRecords() { return new ArrayList<>(medicalRecords); }
 
     public void setBirthDate(LocalDate birthDate) {
         if (birthDate == null)
@@ -81,9 +82,7 @@ class Patient extends Person {
             if (record[1] == null || ((String) record[1]).isBlank())
                 throw new IllegalArgumentException("Error: Patient medical record cannot be null or blank.");
         }
-
-        // check validated dates for appointment and birthdates
-
+        
         this.medicalRecords = medicalRecords;
     }
 
