@@ -1,6 +1,8 @@
 *.class
 *.db
+*.docx
 *.jar
+*.tmp
 
 bin
 !bin/img
