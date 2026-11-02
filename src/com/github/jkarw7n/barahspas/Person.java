@@ -114,7 +114,7 @@ abstract class Person implements Identifiable {
         return firstName + (middleName != null ? " " + middleName.charAt(0) + "." : "") + " " + lastName + (nameSuffix != null ? " " + nameSuffix : "");
     }
 
-    private String capitalizeName(String name) {
+    private static String capitalizeName(String name) {
         String[] split = name.replaceAll("\\s+", " ").strip().split(" ");
 
         for (int i = 0; i < split.length; i++) {
