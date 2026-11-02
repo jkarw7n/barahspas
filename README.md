@@ -19,7 +19,7 @@
 ## Contributors
 - Clark Kent C. Cabigao
 - [Charlene Isabel C. Gallardo](https://github.com/irischivr)
-- King James E. Ignacio
-- Jan Michael M. Magat
+- [King James E. Ignacio](https://github.com/Kingjames-Ignacio)
+- [Jan Michael M. Magat](https://github.com/rockzyyy)
 - Gillian Kyle M. Pingol
 - [Jake Arwin G. Tiongson](https://github.com/jkarw7n) **(Leader)**
